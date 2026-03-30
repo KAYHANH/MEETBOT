@@ -1,0 +1,5 @@
+{
+  "name": "MeetBot",
+  "description": "Professional meeting automation with Google Calendar and Gmail integration.",
+  "requestFramePermissions": []
+}
