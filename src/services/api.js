@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 const DEMO_TOKEN = 'demo-mode';
-const DEMO_STORAGE_KEY = 'meetbot_demo_data';
+const DEMO_STORAGE_KEY = 'meetbot_demo_data_v2';
 
 const DEMO_USER = {
   userId: 'demo-user',
@@ -28,19 +28,20 @@ const createInitialDemoData = () => ({
       userEmail: DEMO_USER.email,
       recipientName: 'Ava Johnson',
       recipientEmail: 'ava@example.com',
-      subject: 'Product Demo Review',
+      participants: ['Ava Johnson', 'Product Team', 'Host'],
+      subject: 'Product Sync: Q4 Roadmap',
       message: 'Let us walk through the latest onboarding flow and gather feedback.',
       scheduledAt: minutesFromNow(180),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       durationMinutes: 45,
       googleMeetLink: 'https://meet.google.com/demo-product-review',
-      status: 'email_sent',
+      status: 'scheduled',
       reminders: [
         createReminder(1440),
         createReminder(60),
         createReminder(0)
       ],
-      createdAt: minutesFromNow(-30),
+      createdAt: minutesFromNow(-50),
       updatedAt: minutesFromNow(-30)
     },
     {
@@ -49,20 +50,21 @@ const createInitialDemoData = () => ({
       userEmail: DEMO_USER.email,
       recipientName: 'Noah Smith',
       recipientEmail: 'noah@example.com',
-      subject: 'Weekly Team Sync',
-      message: 'Agenda: blockers, roadmap progress, and handoffs for next sprint.',
-      scheduledAt: minutesFromNow(1500),
+      participants: ['Noah Smith', 'Hiring Team'],
+      subject: 'Interview: Senior Designer',
+      message: 'Agenda: portfolio walkthrough and team collaboration patterns.',
+      scheduledAt: minutesFromNow(300),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      durationMinutes: 30,
-      googleMeetLink: 'https://meet.google.com/demo-weekly-sync',
-      status: 'scheduled',
+      durationMinutes: 45,
+      googleMeetLink: 'https://meet.google.com/demo-senior-designer',
+      status: 'email_sent',
       reminders: [
-        createReminder(1440, true, minutesFromNow(60)),
+        createReminder(1440),
         createReminder(60),
         createReminder(0)
       ],
-      createdAt: minutesFromNow(-1440),
-      updatedAt: minutesFromNow(-60)
+      createdAt: minutesFromNow(-120),
+      updatedAt: minutesFromNow(-90)
     },
     {
       _id: 'demo-meeting-3',
@@ -70,19 +72,86 @@ const createInitialDemoData = () => ({
       userEmail: DEMO_USER.email,
       recipientName: 'Mia Patel',
       recipientEmail: 'mia@example.com',
-      subject: 'Client Kickoff',
-      message: 'Thanks for joining. We will align on goals, milestones, and owners.',
-      scheduledAt: minutesFromNow(-240),
+      participants: ['Mia Patel', 'Marketing', 'AL'],
+      subject: 'Marketing Alignment',
+      message: 'Review the launch schedule and assign campaign owners.',
+      scheduledAt: minutesFromNow(1560),
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       durationMinutes: 60,
-      googleMeetLink: 'https://meet.google.com/demo-client-kickoff',
+      googleMeetLink: 'https://meet.google.com/demo-marketing-alignment',
+      status: 'reminders_sent',
+      reminders: [
+        createReminder(1440, true, minutesFromNow(120)),
+        createReminder(60),
+        createReminder(0)
+      ],
+      createdAt: minutesFromNow(-1440),
+      updatedAt: minutesFromNow(-60)
+    },
+    {
+      _id: 'demo-meeting-4',
+      userId: DEMO_USER.userId,
+      userEmail: DEMO_USER.email,
+      recipientName: 'Liam Chen',
+      recipientEmail: 'liam@example.com',
+      participants: ['Liam Chen', 'Engineering', 'Product'],
+      subject: 'Weekly Retrospective',
+      message: 'Discuss shipped work, blockers, and improvement areas for next sprint.',
+      scheduledAt: minutesFromNow(-1200),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      durationMinutes: 60,
+      googleMeetLink: 'https://meet.google.com/demo-retrospective',
       status: 'completed',
+      reminders: [
+        createReminder(1440, true, minutesFromNow(-2640)),
+        createReminder(60, true, minutesFromNow(-1260)),
+        createReminder(0, true, minutesFromNow(-1200))
+      ],
+      createdAt: minutesFromNow(-2800),
+      updatedAt: minutesFromNow(-1180)
+    },
+    {
+      _id: 'demo-meeting-5',
+      userId: DEMO_USER.userId,
+      userEmail: DEMO_USER.email,
+      recipientName: 'Sophia Rivera',
+      recipientEmail: 'sophia@example.com',
+      participants: ['Sophia Rivera', 'Finance', 'Ops'],
+      subject: 'Budget Allocation FY25',
+      message: 'Re-align quarterly spend and close out open budget approvals.',
+      scheduledAt: minutesFromNow(-900),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      durationMinutes: 90,
+      googleMeetLink: 'https://meet.google.com/demo-budget-allocation',
+      status: 'cancelled',
+      reminders: [
+        createReminder(1440, true, minutesFromNow(-2340)),
+        createReminder(60, false, null),
+        createReminder(0)
+      ],
+      createdAt: minutesFromNow(-3000),
+      updatedAt: minutesFromNow(-890)
+    },
+    {
+      _id: 'demo-meeting-6',
+      userId: DEMO_USER.userId,
+      userEmail: DEMO_USER.email,
+      recipientName: 'Oliver Grant',
+      recipientEmail: 'oliver@example.com',
+      participants: ['Oliver Grant', 'Platform', 'Infra'],
+      subject: 'Infrastructure Weekly Review',
+      message: 'Inspect service latency, deployment stability, and risk register updates.',
+      scheduledAt: minutesFromNow(-240),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      durationMinutes: 30,
+      googleMeetLink: 'https://meet.google.com/demo-infra-review',
+      status: 'failed',
       reminders: [
         createReminder(1440, true, minutesFromNow(-1680)),
         createReminder(60, true, minutesFromNow(-300)),
-        createReminder(0, true, minutesFromNow(-240))
+        createReminder(0, false, null)
       ],
-      createdAt: minutesFromNow(-3000),
+      createdAt: minutesFromNow(-3200),
       updatedAt: minutesFromNow(-240)
     }
   ],
@@ -96,7 +165,7 @@ const createInitialDemoData = () => ({
       _id: 'demo-log-1',
       meetingId: 'demo-meeting-1',
       type: 'calendar_created',
-      message: 'Calendar event created with Meet link for Product Demo Review',
+      message: 'Google Meet link created for Product Sync: Q4 Roadmap',
       createdAt: minutesFromNow(-30)
     },
     {
@@ -109,16 +178,45 @@ const createInitialDemoData = () => ({
     {
       _id: 'demo-log-3',
       meetingId: 'demo-meeting-2',
-      type: 'reminder_sent',
-      message: 'Reminder (1440m) sent to noah@example.com',
-      createdAt: minutesFromNow(-60)
+      type: 'email_sent',
+      message: 'Reminder sent to noah@example.com',
+      createdAt: minutesFromNow(-120)
     },
     {
       _id: 'demo-log-4',
       meetingId: 'demo-meeting-3',
+      type: 'reminder_sent',
+      message: 'Reminder (1440m) sent to mia@example.com',
+      createdAt: minutesFromNow(-60)
+    },
+    {
+      _id: 'demo-log-5',
+      meetingId: 'demo-meeting-4',
+      type: 'calendar_created',
+      message: 'Status synced for Weekly Retrospective',
+      createdAt: minutesFromNow(-1180)
+    },
+    {
+      _id: 'demo-log-6',
+      meetingId: 'demo-meeting-5',
       type: 'meeting_cancelled',
-      message: 'Historical sample log: completed meetings keep a full audit trail.',
-      createdAt: minutesFromNow(-230)
+      message: 'Budget Allocation FY25 was cancelled after approval review changes',
+      createdAt: minutesFromNow(-890),
+      error: 'Approval owner unavailable'
+    },
+    {
+      _id: 'demo-log-7',
+      meetingId: 'demo-meeting-6',
+      type: 'meeting_cancelled',
+      message: 'Infrastructure Weekly Review failed to attach a calendar event',
+      createdAt: minutesFromNow(-240),
+      error: 'Calendar provider timeout'
+    },
+    {
+      _id: 'demo-log-8',
+      type: 'settings_updated',
+      message: 'Reminder settings updated for the workspace',
+      createdAt: minutesFromNow(-20)
     }
   ]
 });
@@ -261,6 +359,10 @@ class ApiClient {
       userEmail: DEMO_USER.email,
       recipientName: data.recipientName,
       recipientEmail: data.recipientEmail,
+      participants: [
+        data.recipientName,
+        ...(Array.isArray(data.collaborators) ? data.collaborators.slice(0, 3) : []),
+      ],
       subject: data.subject,
       message: data.message,
       scheduledAt: data.scheduledAt,

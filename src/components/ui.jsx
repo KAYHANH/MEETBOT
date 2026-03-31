@@ -1,262 +1,868 @@
 import React from 'react';
+import { Search } from 'lucide-react';
 
 export const C = {
-  accent: '#f5c518',
-  accentDark: '#c9a00f',
-  bg: '#09090f',
-  surface: '#111119',
-  border: '#1f1f30',
-  borderLight: '#2a2a40',
-  text: '#e8e8f0',
-  textMuted: '#7070a0',
-  textDim: '#4a4a70',
-  success: '#22c55e',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  info: '#3b82f6',
+  bg: '#f7f9fb',
+  bgAlt: '#eef3f7',
+  sidebar: '#eff4f8',
+  surface: '#ffffff',
+  surfaceSoft: '#f3f6f9',
+  surfaceStrong: '#e8eef4',
+  text: '#2a3439',
+  textMuted: '#566166',
+  textDim: '#7b8a90',
+  accent: '#0053dc',
+  accentSoft: '#3e76fe',
+  accentTint: '#e7efff',
+  accentTintStrong: '#d8e6ff',
+  success: '#1d8c5a',
+  successTint: '#e8f6ef',
+  warning: '#c67b27',
+  warningTint: '#fff1e3',
+  danger: '#9f403d',
+  dangerTint: '#fde9e7',
+  neutral: '#748088',
+  neutralTint: '#eef2f4',
+  shadow: '0 28px 60px rgba(42, 52, 57, 0.08)',
+  softShadow: '0 18px 44px rgba(42, 52, 57, 0.06)',
+  hairline: 'rgba(169, 180, 185, 0.18)',
+  ghostBorder: 'rgba(169, 180, 185, 0.12)',
+  inverse: '#0b1013',
+  inverseSoft: '#121a20',
+  white: '#ffffff',
+};
+
+export const DISPLAY_FONT = "'Manrope', 'Inter', sans-serif";
+export const BODY_FONT = "'Inter', sans-serif";
+export const MONO_FONT = "'JetBrains Mono', monospace";
+
+const applyFieldFocus = (target, hasError = false) => {
+  target.style.borderColor = hasError ? C.danger : C.accent;
+  target.style.boxShadow = hasError
+    ? `0 0 0 4px ${C.danger}16`
+    : `0 0 0 4px rgba(62, 118, 254, 0.16)`;
+};
+
+const clearFieldFocus = (target, hasError = false) => {
+  target.style.borderColor = hasError ? `${C.danger}55` : C.ghostBorder;
+  target.style.boxShadow = 'none';
+};
+
+const getFieldStyle = (hasError = false, multiline = false) => ({
+  width: '100%',
+  border: `1px solid ${hasError ? `${C.danger}55` : C.ghostBorder}`,
+  background: C.surface,
+  color: C.text,
+  borderRadius: '16px',
+  padding: multiline ? '16px 18px' : '14px 16px',
+  minHeight: multiline ? '132px' : 'auto',
+  resize: multiline ? 'vertical' : 'none',
+  outline: 'none',
+  fontFamily: BODY_FONT,
+  fontSize: '14px',
+  lineHeight: multiline ? '1.6' : '1.4',
+  transition: 'border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
+  boxShadow: 'none',
+});
+
+const cardToneStyles = {
+  default: {
+    background: C.surface,
+    color: C.text,
+  },
+  soft: {
+    background: C.surfaceSoft,
+    color: C.text,
+  },
+  accent: {
+    background: `linear-gradient(145deg, ${C.accent} 0%, ${C.accentSoft} 100%)`,
+    color: C.white,
+  },
+  dark: {
+    background: `linear-gradient(180deg, ${C.inverse} 0%, ${C.inverseSoft} 100%)`,
+    color: C.white,
+  },
 };
 
 export const GlobalStyles = () => (
   <style>{`
-    * { box-sizing: border-box; }
-    body { 
-      margin: 0; 
-      padding: 0; 
-      background-color: ${C.bg}; 
-      color: ${C.text}; 
-      font-family: 'Inter', sans-serif;
-      -webkit-font-smoothing: antialiased;
+    * {
+      box-sizing: border-box;
     }
-    a { color: ${C.accent}; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    
+
+    html, body, #root {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      color: ${C.text};
+      background:
+        radial-gradient(circle at top left, rgba(62, 118, 254, 0.12), transparent 28%),
+        linear-gradient(180deg, ${C.bg} 0%, ${C.bgAlt} 100%);
+      font-family: ${BODY_FONT};
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      margin: 0;
+      font-family: ${DISPLAY_FONT};
+      color: ${C.text};
+    }
+
+    p {
+      margin: 0;
+      color: ${C.textMuted};
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    ::selection {
+      background: rgba(62, 118, 254, 0.18);
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(232, 238, 244, 0.5);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(123, 138, 144, 0.35);
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(86, 97, 102, 0.45);
+    }
+
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    textarea:-webkit-autofill:hover,
+    textarea:-webkit-autofill:focus {
+      -webkit-text-fill-color: ${C.text};
+      -webkit-box-shadow: 0 0 0px 1000px ${C.surface} inset;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-    
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: ${C.bg}; }
-    ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: ${C.borderLight}; }
 
-    input:-webkit-autofill,
-    input:-webkit-autofill:hover, 
-    input:-webkit-autofill:focus {
-      -webkit-text-fill-color: ${C.text};
-      -webkit-box-shadow: 0 0 0px 1000px ${C.surface} inset;
-      transition: background-color 5000s ease-in-out 0s;
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      background: transparent;
+    }
+
+    .app-sidebar {
+      width: 248px;
+      padding: 20px 16px;
+      background: ${C.sidebar};
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .app-workspace {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 12px 24px;
+      backdrop-filter: blur(22px);
+      background: rgba(247, 249, 251, 0.74);
+      border-bottom: 1px solid rgba(169, 180, 185, 0.1);
+    }
+
+    .app-main {
+      flex: 1;
+      padding: 32px clamp(18px, 4vw, 40px) 40px;
+    }
+
+    .auth-shell {
+      min-height: 100vh;
+      padding: 28px clamp(18px, 4vw, 36px) 40px;
+      background:
+        radial-gradient(circle at top right, rgba(62, 118, 254, 0.16), transparent 22%),
+        linear-gradient(180deg, ${C.bg} 0%, ${C.bgAlt} 100%);
+    }
+
+    .auth-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.92fr);
+      gap: 34px;
+      align-items: center;
+      margin-top: 40px;
+    }
+
+    .hero-card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .page-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.95fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .composer-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.95fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .dual-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .triple-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    @media (max-width: 1260px) {
+      .kpi-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .dashboard-grid,
+      .composer-grid,
+      .settings-grid,
+      .auth-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        flex-direction: column;
+      }
+
+      .app-sidebar {
+        width: 100%;
+        padding-bottom: 12px;
+      }
+
+      .app-topbar {
+        padding-inline: 18px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero-card-grid,
+      .dual-grid,
+      .triple-grid,
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .app-main {
+        padding-inline: 16px;
+      }
     }
   `}</style>
 );
 
 export const Spinner = ({ size = 24, color = C.accent }) => (
-  <div style={{
-    width: size,
-    height: size,
-    border: `2px solid ${color}33`,
-    borderTop: `2px solid ${color}`,
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite'
-  }} />
+  <div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      border: `2px solid ${color}22`,
+      borderTopColor: color,
+      animation: 'spin 0.75s linear infinite',
+    }}
+  />
 );
 
-export const Button = ({ children, variant = 'primary', loading, disabled, small, style, ...props }) => {
-  const baseStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: small ? '6px 12px' : '10px 20px',
-    fontSize: small ? '13px' : '14px',
-    fontWeight: '600',
-    borderRadius: '6px',
-    cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
-    transition: 'all 0.2s',
-    border: 'none',
-    gap: '8px',
-    opacity: (disabled || loading) ? 0.6 : 1,
-    ...style
+export const Button = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  small,
+  loading,
+  disabled,
+  leading,
+  trailing,
+  style,
+  ...props
+}) => {
+  const resolvedSize = small ? 'sm' : size;
+
+  const sizeStyles = {
+    sm: { padding: '10px 14px', fontSize: '13px', borderRadius: '12px' },
+    md: { padding: '12px 18px', fontSize: '14px', borderRadius: '14px' },
+    lg: { padding: '14px 22px', fontSize: '15px', borderRadius: '16px' },
   };
 
-  const variants = {
-    primary: { background: C.accent, color: '#000' },
-    secondary: { background: 'transparent', color: C.text, border: `1px solid ${C.borderLight}` },
-    danger: { background: C.danger, color: '#fff' },
-    ghost: { background: 'transparent', color: C.textMuted },
+  const variantStyles = {
+    primary: {
+      background: `linear-gradient(145deg, ${C.accent} 0%, ${C.accentSoft} 100%)`,
+      color: C.white,
+      boxShadow: '0 16px 32px rgba(0, 83, 220, 0.2)',
+    },
+    secondary: {
+      background: C.surfaceSoft,
+      color: C.text,
+      boxShadow: 'none',
+    },
+    ghost: {
+      background: 'transparent',
+      color: C.textMuted,
+      boxShadow: 'none',
+    },
+    dark: {
+      background: C.inverse,
+      color: C.white,
+      boxShadow: C.softShadow,
+    },
+    danger: {
+      background: `linear-gradient(145deg, ${C.danger} 0%, #c75a57 100%)`,
+      color: C.white,
+      boxShadow: '0 16px 30px rgba(159, 64, 61, 0.18)',
+    },
   };
 
-  const currentVariant = variants[variant] || variants.primary;
+  const currentSize = sizeStyles[resolvedSize] || sizeStyles.md;
+  const currentVariant = variantStyles[variant] || variantStyles.primary;
 
   return (
-    <button 
-      disabled={disabled || loading} 
-      style={{ ...baseStyle, ...currentVariant }}
+    <button
+      disabled={disabled || loading}
+      style={{
+        border: 'none',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        fontWeight: 700,
+        letterSpacing: '0.01em',
+        transition: 'transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease',
+        opacity: disabled || loading ? 0.64 : 1,
+        ...currentSize,
+        ...currentVariant,
+        ...style,
+      }}
+      onMouseEnter={(event) => {
+        if (disabled || loading) return;
+        event.currentTarget.style.filter = 'brightness(1.05)';
+        event.currentTarget.style.transform = 'translateY(-1px)';
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.filter = 'none';
+        event.currentTarget.style.transform = 'translateY(0)';
+      }}
       {...props}
     >
-      {loading ? <Spinner size={16} color={currentVariant.color} /> : children}
+      {loading ? <Spinner size={16} color={currentVariant.color} /> : leading}
+      <span>{children}</span>
+      {!loading && trailing}
     </button>
   );
 };
 
-export const Badge = ({ status }) => {
-  const colors = {
-    scheduled: { bg: C.info + '22', text: C.info },
-    email_sent: { bg: C.success + '22', text: C.success },
-    reminders_sent: { bg: C.warning + '22', text: C.warning },
-    completed: { bg: C.textMuted + '22', text: C.textMuted },
-    failed: { bg: C.danger + '22', text: C.danger },
-    cancelled: { bg: C.danger + '22', text: C.danger },
+export const Eyebrow = ({ children, tone = 'accent', style }) => {
+  const tones = {
+    accent: { background: C.accentTint, color: C.accent },
+    neutral: { background: C.surfaceSoft, color: C.textMuted },
+    success: { background: C.successTint, color: C.success },
+    dark: { background: `${C.white}14`, color: C.white },
   };
 
-  const config = colors[status] || { bg: C.border, text: C.textMuted };
+  const toneStyles = tones[tone] || tones.accent;
 
   return (
-    <span style={{
-      padding: '2px 8px',
-      borderRadius: '12px',
-      fontSize: '11px',
-      fontWeight: '700',
-      textTransform: 'uppercase',
-      backgroundColor: config.bg,
-      color: config.text,
-      letterSpacing: '0.5px'
-    }}>
-      {status.replace('_', ' ')}
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '6px 10px',
+        borderRadius: '999px',
+        fontSize: '10px',
+        fontWeight: 800,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        ...toneStyles,
+        ...style,
+      }}
+    >
+      {children}
     </span>
   );
 };
 
-export const Input = ({ label, error, hint, style, ...props }) => (
-  <div style={{ marginBottom: '16px', width: '100%', ...style }}>
-    {label && <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: C.textMuted }}>{label}</label>}
-    <input 
+export const SearchField = ({ style, inputStyle, ...props }) => (
+  <div style={{ position: 'relative', ...style }}>
+    <Search
+      size={16}
+      color={C.textDim}
+      style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}
+    />
+    <input
       style={{
-        width: '100%',
-        padding: '10px 12px',
-        background: C.surface,
-        border: `1px solid ${error ? C.danger : C.border}`,
-        borderRadius: '6px',
-        color: C.text,
-        fontSize: '14px',
-        outline: 'none',
-        transition: 'border-color 0.2s'
+        ...getFieldStyle(false),
+        paddingLeft: '42px',
+        background: `${C.surface}cc`,
+        ...inputStyle,
       }}
-      onFocus={(e) => e.target.style.borderColor = C.accent}
-      onBlur={(e) => e.target.style.borderColor = error ? C.danger : C.border}
+      placeholder="Search..."
       {...props}
     />
-    {hint && <div style={{ marginTop: '4px', fontSize: '12px', color: C.textDim }}>{hint}</div>}
-    {error && <div style={{ marginTop: '4px', fontSize: '12px', color: C.danger }}>{error}</div>}
   </div>
 );
 
-export const Select = ({ label, children, ...props }) => (
-  <div style={{ marginBottom: '16px', width: '100%' }}>
-    {label && <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: C.textMuted }}>{label}</label>}
-    <select 
+export const Card = ({
+  title,
+  subtitle,
+  actions,
+  children,
+  tone = 'default',
+  padding = '24px',
+  style,
+}) => {
+  const toneStyle = cardToneStyles[tone] || cardToneStyles.default;
+
+  return (
+    <section
       style={{
-        width: '100%',
-        padding: '10px 12px',
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: '6px',
-        color: C.text,
-        fontSize: '14px',
-        outline: 'none'
+        borderRadius: '24px',
+        boxShadow: tone === 'accent' || tone === 'dark' ? C.shadow : C.softShadow,
+        padding,
+        ...toneStyle,
+        ...style,
       }}
+    >
+      {(title || subtitle || actions) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '18px',
+            marginBottom: '18px',
+          }}
+        >
+          <div>
+            {title && (
+              <div style={{ fontSize: '14px', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                {title}
+              </div>
+            )}
+            {subtitle && (
+              <div style={{ marginTop: '6px', fontSize: '13px', color: tone === 'accent' || tone === 'dark' ? 'rgba(255,255,255,0.76)' : C.textMuted }}>
+                {subtitle}
+              </div>
+            )}
+          </div>
+          {actions}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+};
+
+export const StatCard = ({ label, value, icon, sub, trend, tone = 'default' }) => (
+  <Card
+    tone={tone}
+    padding="18px"
+    style={{
+      minHeight: '138px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
+      <div
+        style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '14px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: tone === 'accent' ? 'rgba(255,255,255,0.14)' : C.surfaceSoft,
+          color: tone === 'accent' ? C.white : C.accent,
+        }}
+      >
+        {icon}
+      </div>
+      {trend && (
+        <span
+          style={{
+            padding: '5px 8px',
+            borderRadius: '999px',
+            fontSize: '11px',
+            fontWeight: 800,
+            color: tone === 'accent' ? C.white : C.success,
+            background: tone === 'accent' ? 'rgba(255,255,255,0.14)' : C.successTint,
+          }}
+        >
+          {trend}
+        </span>
+      )}
+    </div>
+
+    <div>
+      <div
+        style={{
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '0.11em',
+          textTransform: 'uppercase',
+          color: tone === 'accent' ? 'rgba(255,255,255,0.76)' : C.textDim,
+          marginBottom: '10px',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: DISPLAY_FONT,
+          fontWeight: 800,
+          fontSize: '2rem',
+          letterSpacing: '-0.03em',
+          color: tone === 'accent' ? C.white : C.text,
+        }}
+      >
+        {value}
+      </div>
+      {sub && (
+        <div style={{ marginTop: '8px', fontSize: '13px', color: tone === 'accent' ? 'rgba(255,255,255,0.76)' : C.textMuted }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  </Card>
+);
+
+export const Badge = ({ status, style }) => {
+  const config = {
+    scheduled: { label: 'Scheduled', background: C.accentTint, color: C.accent },
+    email_sent: { label: 'Invited', background: '#ebeff5', color: '#6e7a83' },
+    reminders_sent: { label: 'Reminded', background: C.dangerTint, color: C.danger },
+    completed: { label: 'Completed', background: C.successTint, color: C.success },
+    failed: { label: 'Failed', background: C.dangerTint, color: C.danger },
+    cancelled: { label: 'Cancelled', background: C.neutralTint, color: C.neutral },
+  }[status] || { label: status, background: C.surfaceSoft, color: C.textMuted };
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '6px 10px',
+        borderRadius: '999px',
+        fontSize: '11px',
+        fontWeight: 800,
+        letterSpacing: '0.02em',
+        background: config.background,
+        color: config.color,
+        ...style,
+      }}
+    >
+      <span
+        style={{
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          background: config.color,
+        }}
+      />
+      {config.label}
+    </span>
+  );
+};
+
+export const Input = ({ label, error, hint, style, inputStyle, ...props }) => (
+  <div style={{ width: '100%', ...style }}>
+    {label && (
+      <label
+        style={{
+          display: 'block',
+          marginBottom: '10px',
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: C.textDim,
+        }}
+      >
+        {label}
+      </label>
+    )}
+    <input
+      style={{
+        ...getFieldStyle(Boolean(error)),
+        ...inputStyle,
+      }}
+      onFocus={(event) => applyFieldFocus(event.target, Boolean(error))}
+      onBlur={(event) => clearFieldFocus(event.target, Boolean(error))}
+      {...props}
+    />
+    {hint && <div style={{ marginTop: '8px', fontSize: '12px', color: C.textDim }}>{hint}</div>}
+    {error && <div style={{ marginTop: '8px', fontSize: '12px', color: C.danger }}>{error}</div>}
+  </div>
+);
+
+export const Select = ({ label, error, style, selectStyle, children, ...props }) => (
+  <div style={{ width: '100%', ...style }}>
+    {label && (
+      <label
+        style={{
+          display: 'block',
+          marginBottom: '10px',
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: C.textDim,
+        }}
+      >
+        {label}
+      </label>
+    )}
+    <select
+      style={{
+        ...getFieldStyle(Boolean(error)),
+        appearance: 'none',
+        backgroundImage:
+          "linear-gradient(45deg, transparent 50%, #7b8a90 50%), linear-gradient(135deg, #7b8a90 50%, transparent 50%)",
+        backgroundPosition: 'calc(100% - 22px) calc(50% - 2px), calc(100% - 16px) calc(50% - 2px)',
+        backgroundSize: '6px 6px, 6px 6px',
+        backgroundRepeat: 'no-repeat',
+        ...selectStyle,
+      }}
+      onFocus={(event) => applyFieldFocus(event.target, Boolean(error))}
+      onBlur={(event) => clearFieldFocus(event.target, Boolean(error))}
       {...props}
     >
       {children}
     </select>
+    {error && <div style={{ marginTop: '8px', fontSize: '12px', color: C.danger }}>{error}</div>}
   </div>
 );
 
-export const Textarea = ({ label, hint, ...props }) => (
-  <div style={{ marginBottom: '16px', width: '100%' }}>
-    {label && <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: C.textMuted }}>{label}</label>}
-    <textarea 
+export const Textarea = ({ label, error, hint, style, textareaStyle, ...props }) => (
+  <div style={{ width: '100%', ...style }}>
+    {label && (
+      <label
+        style={{
+          display: 'block',
+          marginBottom: '10px',
+          fontSize: '11px',
+          fontWeight: 800,
+          letterSpacing: '0.12em',
+          textTransform: 'uppercase',
+          color: C.textDim,
+        }}
+      >
+        {label}
+      </label>
+    )}
+    <textarea
       style={{
-        width: '100%',
-        padding: '10px 12px',
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-        borderRadius: '6px',
-        color: C.text,
-        fontSize: '14px',
-        outline: 'none',
-        minHeight: '100px',
-        resize: 'vertical'
+        ...getFieldStyle(Boolean(error), true),
+        ...textareaStyle,
       }}
-      onFocus={(e) => e.target.style.borderColor = C.accent}
-      onBlur={(e) => e.target.style.borderColor = C.border}
+      onFocus={(event) => applyFieldFocus(event.target, Boolean(error))}
+      onBlur={(event) => clearFieldFocus(event.target, Boolean(error))}
       {...props}
     />
-    {hint && <div style={{ marginTop: '4px', fontSize: '12px', color: C.textDim }}>{hint}</div>}
+    {hint && <div style={{ marginTop: '8px', fontSize: '12px', color: C.textDim }}>{hint}</div>}
+    {error && <div style={{ marginTop: '8px', fontSize: '12px', color: C.danger }}>{error}</div>}
   </div>
 );
 
-export const Card = ({ title, children, style }) => (
-  <div style={{
-    background: C.surface,
-    borderRadius: '12px',
-    border: `1px solid ${C.border}`,
-    padding: '24px',
-    marginBottom: '24px',
-    ...style
-  }}>
-    {title && <h3 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: '700' }}>{title}</h3>}
-    {children}
-  </div>
-);
-
-export const StatCard = ({ label, value, icon, color = C.accent, sub }) => (
-  <div style={{
-    background: C.surface,
-    borderRadius: '12px',
-    border: `1px solid ${C.border}`,
-    padding: '20px',
-    flex: 1,
-    minWidth: '180px'
-  }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-      <span style={{ fontSize: '13px', fontWeight: '600', color: C.textMuted }}>{label}</span>
-      <span style={{ fontSize: '20px' }}>{icon}</span>
+export const EmptyState = ({ icon, title, sub, actions }) => (
+  <Card
+    style={{
+      textAlign: 'center',
+      padding: '52px 24px',
+      background: `linear-gradient(180deg, ${C.surface} 0%, ${C.surfaceSoft} 100%)`,
+    }}
+  >
+    <div
+      style={{
+        width: '64px',
+        height: '64px',
+        margin: '0 auto 18px',
+        borderRadius: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: C.accentTint,
+        color: C.accent,
+      }}
+    >
+      {icon}
     </div>
-    <div style={{ fontSize: '28px', fontWeight: '800', color }}>{value}</div>
-    {sub && <div style={{ fontSize: '12px', color: C.textDim, marginTop: '4px' }}>{sub}</div>}
-  </div>
+    <h3 style={{ fontSize: '28px', marginBottom: '12px' }}>{title}</h3>
+    <p style={{ maxWidth: '480px', margin: '0 auto', fontSize: '15px', lineHeight: '1.7' }}>{sub}</p>
+    {actions && <div style={{ marginTop: '24px' }}>{actions}</div>}
+  </Card>
 );
 
-export const EmptyState = ({ icon, title, sub }) => (
-  <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-    <div style={{ fontSize: '48px', marginBottom: '16px' }}>{icon}</div>
-    <h3 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>{title}</h3>
-    <p style={{ margin: 0, color: C.textMuted, fontSize: '14px' }}>{sub}</p>
-  </div>
-);
-
-export const Toggle = ({ checked, onChange, label }) => (
-  <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '12px' }}>
-    <div style={{
-      width: '40px',
-      height: '20px',
-      background: checked ? C.accent : C.borderLight,
-      borderRadius: '10px',
-      position: 'relative',
-      transition: 'background 0.2s'
-    }}>
-      <div style={{
-        width: '16px',
-        height: '16px',
-        background: checked ? '#000' : C.textMuted,
-        borderRadius: '50%',
-        position: 'absolute',
-        top: '2px',
-        left: checked ? '22px' : '2px',
-        transition: 'all 0.2s'
-      }} />
+export const Toggle = ({ checked, onChange, label, sublabel }) => (
+  <label
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '14px',
+      padding: '14px 16px',
+      borderRadius: '18px',
+      background: C.surface,
+      boxShadow: `inset 0 0 0 1px ${C.ghostBorder}`,
+      cursor: 'pointer',
+    }}
+  >
+    <div>
+      <div style={{ fontSize: '14px', fontWeight: 700 }}>{label}</div>
+      {sublabel && <div style={{ marginTop: '4px', fontSize: '12px', color: C.textDim }}>{sublabel}</div>}
+    </div>
+    <div
+      style={{
+        width: '42px',
+        height: '24px',
+        borderRadius: '999px',
+        background: checked ? C.accent : C.surfaceStrong,
+        padding: '3px',
+        transition: 'background 0.2s ease',
+      }}
+    >
+      <div
+        style={{
+          width: '18px',
+          height: '18px',
+          borderRadius: '50%',
+          background: C.white,
+          transform: checked ? 'translateX(18px)' : 'translateX(0)',
+          transition: 'transform 0.2s ease',
+          boxShadow: '0 4px 10px rgba(42, 52, 57, 0.15)',
+        }}
+      />
     </div>
     <input type="checkbox" checked={checked} onChange={onChange} style={{ display: 'none' }} />
-    {label && <span style={{ fontSize: '14px', fontWeight: '500' }}>{label}</span>}
   </label>
 );
+
+export const AvatarStack = ({ items = [], max = 4, style }) => {
+  const visible = items.slice(0, max);
+  const overflow = items.length - visible.length;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', ...style }}>
+      {visible.map((item, index) => {
+        const label = typeof item === 'string' ? item : item?.label || item?.name || 'User';
+        const initials = label
+          .split(' ')
+          .map((part) => part[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase();
+
+        return (
+          <div
+            key={`${label}-${index}`}
+            title={label}
+            style={{
+              width: '30px',
+              height: '30px',
+              borderRadius: '50%',
+              marginLeft: index === 0 ? 0 : '-8px',
+              border: `2px solid ${C.surface}`,
+              background: index % 2 === 0 ? C.accentTint : C.surfaceStrong,
+              color: index % 2 === 0 ? C.accent : C.textMuted,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '11px',
+              fontWeight: 800,
+            }}
+          >
+            {initials}
+          </div>
+        );
+      })}
+
+      {overflow > 0 && (
+        <div
+          style={{
+            width: '30px',
+            height: '30px',
+            borderRadius: '50%',
+            marginLeft: visible.length === 0 ? 0 : '-8px',
+            border: `2px solid ${C.surface}`,
+            background: C.surfaceSoft,
+            color: C.textMuted,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            fontWeight: 800,
+          }}
+        >
+          +{overflow}
+        </div>
+      )}
+    </div>
+  );
+};

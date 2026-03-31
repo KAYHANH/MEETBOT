@@ -8,10 +8,12 @@ import { DashboardPage } from './components/Dashboard/DashboardPage';
 import { MeetingsPage } from './components/Dashboard/MeetingsPage';
 import { LogsPage } from './components/Dashboard/LogsPage';
 import { SettingsPage } from './components/Settings/SettingsPage';
+import { GlobalStyles } from './components/ui';
 
 function App() {
   return (
     <BrowserRouter>
+      <GlobalStyles />
       <AuthProvider>
         <Routes>
           <Route path="/auth" element={<LoginPage />} />

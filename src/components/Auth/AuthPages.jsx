@@ -1,7 +1,45 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  Brain,
+  FileText,
+  Play,
+  Settings2,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Button, C, Spinner } from '../ui';
+import { Button, C, Card, Eyebrow, Spinner } from '../ui';
+
+const featureCards = [
+  {
+    icon: <FileText size={20} />,
+    title: 'Automated Transcripts',
+    copy:
+      'Capture decisions, follow-ups, and summaries without manual note-taking after every session.',
+  },
+  {
+    icon: <Sparkles size={20} />,
+    title: 'Smart Automations',
+    copy:
+      'Sync meeting context into your workflow and keep reminders, invites, and recaps moving automatically.',
+  },
+  {
+    icon: <Zap size={20} />,
+    title: '20+ Platform Actions',
+    copy:
+      'Coordinate invites, scheduling, and reminders from one workflow instead of juggling separate tools.',
+  },
+  {
+    icon: <Brain size={20} />,
+    title: 'Executive Analytics',
+    copy:
+      'Review timing, follow-up health, and activity signals in a calm workspace built for operations teams.',
+  },
+];
+
+const trustedBy = ['VELO', 'CYPHER', 'NEXUS', 'AETHER', 'ORBIT'];
 
 export const LoginPage = () => {
   const { login, loginDemo, user, isDemoMode } = useAuth();
@@ -12,82 +50,371 @@ export const LoginPage = () => {
   }, [user, navigate]);
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      padding: '40px 20px',
-      textAlign: 'center'
-    }}>
-      <div style={{ 
-        fontSize: '64px', 
-        color: C.accent, 
-        marginBottom: '16px',
-        background: `${C.accent}11`,
-        width: '100px',
-        height: '100px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '24px'
-      }}>⬡</div>
-      <h1 style={{ fontSize: '48px', fontWeight: '900', margin: '0 0 8px 0', letterSpacing: '-1px' }}>MeetBot</h1>
-      <p style={{ fontSize: '18px', color: C.textMuted, maxWidth: '400px', marginBottom: '40px' }}>
-        Professional meeting automation. Schedule, invite, and remind — all for free using your Google account.
-      </p>
-
-      <Button onClick={login} style={{ padding: '14px 32px', fontSize: '16px', borderRadius: '12px' }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: '8px' }}>
-          <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-          <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        Continue with Google
-      </Button>
-
-      {isDemoMode && (
-        <>
-          <div style={{ margin: '18px 0 12px', fontSize: '12px', color: C.textDim, textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>
-            or explore locally
+    <div className="auth-shell">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '20px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '14px',
+              background: `linear-gradient(145deg, ${C.accent} 0%, ${C.accentSoft} 100%)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: C.white,
+              boxShadow: '0 18px 32px rgba(0, 83, 220, 0.22)',
+            }}
+          >
+            <Sparkles size={18} />
           </div>
-          <Button variant="secondary" onClick={loginDemo} style={{ padding: '12px 28px', fontSize: '15px', borderRadius: '12px' }}>
-            Enter Demo Mode
-          </Button>
-          <p style={{ maxWidth: '460px', marginTop: '14px', color: C.textDim, fontSize: '13px', lineHeight: '1.6' }}>
-            Demo mode skips Google sign-in and uses local mock meetings, logs, and settings so anyone can explore the product right after cloning the repo.
-          </p>
-        </>
-      )}
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '24px', 
-        maxWidth: '800px', 
-        marginTop: '80px',
-        textAlign: 'left'
-      }}>
-        {[
-          { icon: '✉️', title: 'Auto Invites', sub: 'Sends professional HTML invites from your Gmail.' },
-          { icon: '📅', title: 'Calendar Sync', sub: 'Creates events and Meet links automatically.' },
-          { icon: '⏰', title: 'Reminders', sub: '24h and 1h email alerts for all participants.' },
-          { icon: '🔔', title: 'Starting Now', sub: 'Instant "Join Now" links at meeting time.' },
-          { icon: '📊', title: 'Dashboard', sub: 'Track all your meetings and reminder history.' },
-          { icon: '🛡️', title: 'Secure', sub: 'Tokens are encrypted. Your data stays yours.' }
-        ].map((f, i) => (
-          <div key={i} style={{ padding: '20px', background: C.surface, borderRadius: '16px', border: `1px solid ${C.border}` }}>
-            <div style={{ fontSize: '24px', marginBottom: '12px' }}>{f.icon}</div>
-            <div style={{ fontWeight: '700', marginBottom: '4px' }}>{f.title}</div>
-            <div style={{ fontSize: '13px', color: C.textMuted }}>{f.sub}</div>
+          <div style={{ fontFamily: "'Manrope', 'Inter', sans-serif", fontSize: '22px', fontWeight: 800, letterSpacing: '-0.04em' }}>
+            MeetBot
           </div>
-        ))}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '26px',
+            flexWrap: 'wrap',
+            color: C.textMuted,
+            fontSize: '13px',
+            fontWeight: 600,
+          }}
+        >
+          <span style={{ color: C.accent }}>Platform</span>
+          <span>Solutions</span>
+          <span>Pricing</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '14px',
+              border: 'none',
+              background: C.surface,
+              boxShadow: C.softShadow,
+              color: C.textMuted,
+            }}
+          >
+            <Bell size={16} />
+          </button>
+          <button
+            type="button"
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '14px',
+              border: 'none',
+              background: C.surface,
+              boxShadow: C.softShadow,
+              color: C.textMuted,
+            }}
+          >
+            <Settings2 size={16} />
+          </button>
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              background: C.inverse,
+              color: C.white,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              boxShadow: C.softShadow,
+            }}
+          >
+            M
+          </div>
+        </div>
       </div>
 
-      <div style={{ marginTop: '60px', fontSize: '12px', color: C.textDim }}>
-        100% Free &bull; Uses only your Google Account &bull; No credit card required
+      <div className="auth-grid">
+        <div>
+          <Eyebrow>Automated intelligence</Eyebrow>
+          <h1
+            style={{
+              marginTop: '22px',
+              maxWidth: '620px',
+              fontSize: 'clamp(3rem, 7vw, 5.25rem)',
+              lineHeight: '0.96',
+              letterSpacing: '-0.055em',
+            }}
+          >
+            Your meetings,
+            <br />
+            <span style={{ color: C.accent }}>perfectly</span>
+            <br />
+            synthesized.
+          </h1>
+
+          <p
+            style={{
+              marginTop: '22px',
+              maxWidth: '540px',
+              fontSize: '18px',
+              lineHeight: '1.7',
+              color: C.textMuted,
+            }}
+          >
+            MeetBot transforms every video call into organized action. Schedule,
+            invite, and follow through from one polished workspace with live
+            transcripts, reminders, and AI summaries.
+          </p>
+
+          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '28px' }}>
+            <Button
+              size="lg"
+              leading={
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path fill="currentColor" d="M21.8 12.2c0-.7-.06-1.36-.18-2H12v3.8h5.5a4.7 4.7 0 0 1-2.04 3.1v2.58h3.3c1.92-1.77 3.04-4.38 3.04-7.48Z" />
+                  <path fill="currentColor" d="M12 22c2.75 0 5.06-.9 6.75-2.46l-3.3-2.58c-.91.6-2.06.97-3.45.97-2.65 0-4.91-1.79-5.73-4.2H2.9v2.66A10 10 0 0 0 12 22Z" />
+                  <path fill="currentColor" d="M6.27 13.73A6 6 0 0 1 5.95 12c0-.6.1-1.18.32-1.73V7.61H2.9A10 10 0 0 0 2 12c0 1.61.38 3.14 1.06 4.39l3.21-2.66Z" />
+                  <path fill="currentColor" d="M12 6.07c1.5 0 2.85.52 3.92 1.53l2.94-2.94C17.06 2.99 14.75 2 12 2a10 10 0 0 0-9.1 5.61l3.37 2.66c.82-2.41 3.08-4.2 5.73-4.2Z" />
+                </svg>
+              }
+              onClick={login}
+            >
+              Continue with Google
+            </Button>
+
+            {isDemoMode && (
+              <Button
+                variant="secondary"
+                size="lg"
+                leading={<Play size={16} />}
+                onClick={loginDemo}
+              >
+                View Demo
+              </Button>
+            )}
+          </div>
+
+          <div className="hero-card-grid">
+            {featureCards.map((feature, index) => (
+              <Card
+                key={feature.title}
+                style={{
+                  minHeight: index === 0 ? '200px' : 'unset',
+                  background: index === 2
+                    ? `linear-gradient(145deg, ${C.accent} 0%, ${C.accentSoft} 100%)`
+                    : C.surface,
+                  color: index === 2 ? C.white : C.text,
+                }}
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '16px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: index === 2 ? 'rgba(255,255,255,0.14)' : C.surfaceSoft,
+                    color: index === 2 ? C.white : C.accent,
+                    marginBottom: '18px',
+                  }}
+                >
+                  {feature.icon}
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: 800, marginBottom: '10px' }}>
+                  {feature.title}
+                </div>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    lineHeight: '1.7',
+                    color: index === 2 ? 'rgba(255,255,255,0.78)' : C.textMuted,
+                  }}
+                >
+                  {feature.copy}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            position: 'relative',
+            padding: '34px',
+            borderRadius: '36px',
+            background: `linear-gradient(145deg, #0e5269 0%, #154d82 100%)`,
+            boxShadow: '0 36px 72px rgba(17, 54, 89, 0.24)',
+            minHeight: '600px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '340px',
+              borderRadius: '28px',
+              background: C.surface,
+              boxShadow: '0 32px 60px rgba(10, 24, 40, 0.18)',
+              padding: '20px',
+              transform: 'rotate(1.6deg)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: C.textDim, textTransform: 'uppercase' }}>
+                Base
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[C.surfaceStrong, C.surfaceStrong, C.text].map((color, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      background: color,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'center', fontSize: '24px', fontWeight: 800, marginBottom: '18px' }}>MeetBot</div>
+
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {['Dashboard', 'Meetings', 'Transcripts', 'Automations', 'Analytics'].map((item, index) => (
+                <div
+                  key={item}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 12px',
+                    borderRadius: '16px',
+                    background: index === 1 ? C.accentTint : C.surfaceSoft,
+                    color: index === 1 ? C.accent : C.textMuted,
+                    fontWeight: 700,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: '10px',
+                      background: index === 1 ? C.white : C.surface,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Card
+            style={{
+              position: 'absolute',
+              left: '18px',
+              bottom: '34px',
+              width: '220px',
+              background: 'rgba(255,255,255,0.92)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
+            <Eyebrow>Real-time sync</Eyebrow>
+            <div style={{ marginTop: '16px', fontSize: '16px', fontWeight: 800 }}>
+              Automated transcripts
+            </div>
+            <div style={{ marginTop: '6px', fontSize: '13px', lineHeight: '1.6' }}>
+              98.4% accuracy achieved on live calls with searchable highlights and follow-up actions.
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      <div style={{ marginTop: '70px', textAlign: 'center' }}>
+        <div style={{ fontSize: '10px', fontWeight: 800, color: C.textDim, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+          Trusted by teams at
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '34px',
+            flexWrap: 'wrap',
+            marginTop: '20px',
+            color: '#9aa5ab',
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+          }}
+        >
+          {trustedBy.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '20px',
+          marginTop: '74px',
+          paddingTop: '34px',
+          borderTop: `1px solid ${C.hairline}`,
+        }}
+      >
+        <div>
+          <div style={{ fontFamily: "'Manrope', 'Inter', sans-serif", fontSize: '22px', fontWeight: 800, letterSpacing: '-0.04em' }}>
+            MeetBot
+          </div>
+          <p style={{ marginTop: '14px', maxWidth: '280px', fontSize: '14px', lineHeight: '1.7' }}>
+            Building a quieter, more useful operating system for meetings, summaries,
+            and follow-through.
+          </p>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: C.textDim, textTransform: 'uppercase' }}>
+            Product
+          </div>
+          <div style={{ display: 'grid', gap: '10px', marginTop: '16px', fontSize: '14px' }}>
+            <span>Transcription</span>
+            <span>Summaries</span>
+            <span>Security</span>
+            <span>Integrations</span>
+          </div>
+        </div>
+
+        <div>
+          <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.15em', color: C.textDim, textTransform: 'uppercase' }}>
+            Support
+          </div>
+          <div style={{ display: 'grid', gap: '10px', marginTop: '16px', fontSize: '14px' }}>
+            <span>Documentation</span>
+            <span>Help Center</span>
+            <span>API Status</span>
+            <span>Contact</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -114,19 +441,55 @@ export const AuthCallback = () => {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
-        <h2 style={{ color: C.danger }}>Authentication Failed</h2>
-        <p style={{ color: C.textMuted, marginBottom: '24px' }}>{error}</p>
-        <Button onClick={() => navigate('/auth')}>Try Again</Button>
+      <div className="auth-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Card style={{ maxWidth: '460px', textAlign: 'center' }}>
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 18px',
+              borderRadius: '20px',
+              background: C.dangerTint,
+              color: C.danger,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '28px',
+              fontWeight: 800,
+            }}
+          >
+            !
+          </div>
+          <h2 style={{ fontSize: '34px', marginBottom: '12px' }}>Authentication failed</h2>
+          <p style={{ fontSize: '15px', lineHeight: '1.7', marginBottom: '22px' }}>{error}</p>
+          <Button onClick={() => navigate('/auth')}>Return to login</Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-      <Spinner size={48} />
-      <p style={{ marginTop: '20px', color: C.textMuted }}>Finalizing authentication...</p>
+    <div className="auth-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Card style={{ maxWidth: '460px', textAlign: 'center' }}>
+        <div
+          style={{
+            width: '64px',
+            height: '64px',
+            margin: '0 auto 18px',
+            borderRadius: '20px',
+            background: C.accentTint,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Spinner size={28} />
+        </div>
+        <h2 style={{ fontSize: '34px', marginBottom: '12px' }}>Finalizing your workspace</h2>
+        <p style={{ fontSize: '15px', lineHeight: '1.7' }}>
+          MeetBot is connecting your account and preparing the dashboard.
+        </p>
+      </Card>
     </div>
   );
 };

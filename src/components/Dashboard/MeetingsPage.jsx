@@ -1,98 +1,221 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CalendarClock, Filter, Plus, Sparkles, Video } from 'lucide-react';
 import { api } from '../../services/api';
 import { usePolling } from '../../hooks/useApi';
-import { Button, C, Spinner, EmptyState } from '../ui';
+import {
+  AvatarStack,
+  Button,
+  C,
+  Card,
+  EmptyState,
+  Eyebrow,
+  SearchField,
+  Spinner,
+  StatCard,
+} from '../ui';
 import { MeetingCard } from './MeetingCard';
 
+const PAGE_SIZE = 4;
+
+const statusOptions = [
+  { label: 'All', value: '' },
+  { label: 'Scheduled', value: 'scheduled' },
+  { label: 'Invited', value: 'email_sent' },
+  { label: 'Reminded', value: 'reminders_sent' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
+
+const filterSearch = (meeting, query) => {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+
+  return [
+    meeting.subject,
+    meeting.recipientName,
+    meeting.recipientEmail,
+    meeting.timezone,
+    meeting._id,
+  ]
+    .filter(Boolean)
+    .some((value) => value.toLowerCase().includes(normalized));
+};
+
 export const MeetingsPage = () => {
+  const navigate = useNavigate();
   const [status, setStatus] = useState('');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  
-  const { data, loading, refresh } = usePolling(() => api.getMeetings({ status, page, limit: 20 }), 30000);
 
-  const handleStatusChange = (newStatus) => {
-    setStatus(newStatus);
+  const { data, loading, refresh } = usePolling(() => api.getMeetings({ limit: 100 }), 30000);
+  const meetings = data?.meetings || [];
+
+  const filteredMeetings = useMemo(() => {
+    return meetings.filter((meeting) => (!status || meeting.status === status) && filterSearch(meeting, search));
+  }, [meetings, status, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMeetings.length / PAGE_SIZE));
+  const pagedMeetings = filteredMeetings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  React.useEffect(() => {
     setPage(1);
-  };
+  }, [status, search]);
 
-  const statuses = [
-    { label: 'All', value: '' },
-    { label: 'Scheduled', value: 'scheduled' },
-    { label: 'Invited', value: 'email_sent' },
-    { label: 'Reminded', value: 'reminders_sent' },
-    { label: 'Completed', value: 'completed' },
-    { label: 'Failed', value: 'failed' },
-    { label: 'Cancelled', value: 'cancelled' },
-  ];
+  const upcomingToday = filteredMeetings.filter((meeting) => {
+    const date = new Date(meeting.scheduledAt);
+    const now = new Date();
+    return (
+      date.toDateString() === now.toDateString() &&
+      date > now &&
+      !['cancelled', 'failed', 'completed'].includes(meeting.status)
+    );
+  }).length;
+
+  const automationScore = filteredMeetings.length
+    ? Math.max(
+        70,
+        Math.round(
+          (filteredMeetings.filter((meeting) => !['failed', 'cancelled'].includes(meeting.status)).length /
+            filteredMeetings.length) *
+            100,
+        ),
+      )
+    : 94;
+
+  const participants = filteredMeetings.map((meeting) => meeting.recipientName);
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+    <div className="page-grid">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: '800', margin: '0 0 4px 0' }}>All Meetings</h1>
-          <p style={{ color: C.textMuted, margin: 0 }}>Manage your entire meeting history.</p>
+          <Eyebrow>Management</Eyebrow>
+          <h1 style={{ marginTop: '14px', fontSize: '48px', letterSpacing: '-0.05em' }}>All meetings</h1>
+          <p style={{ marginTop: '10px', maxWidth: '640px', fontSize: '16px', lineHeight: '1.7' }}>
+            Manage your upcoming schedules, review transcripts from previous sessions,
+            and automate follow-ups for your workspace.
+          </p>
         </div>
-        <Button onClick={() => window.location.href = '/compose'}>✦ New Meeting</Button>
+
+        <Button onClick={() => navigate('/compose')} leading={<Plus size={16} />}>
+          New Meeting
+        </Button>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', overflowX: 'auto', paddingBottom: '8px' }}>
-        {statuses.map(s => (
-          <button
-            key={s.value}
-            onClick={() => handleStatusChange(s.value)}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '20px',
-              border: `1px solid ${status === s.value ? C.accent : C.border}`,
-              background: status === s.value ? `${C.accent}11` : 'transparent',
-              color: status === s.value ? C.accent : C.textMuted,
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s'
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
+      <div className="triple-grid">
+        <StatCard label="Total Meetings" value={filteredMeetings.length || meetings.length} icon={<Video size={18} />} trend="+12%" />
+        <StatCard label="Upcoming Today" value={upcomingToday} icon={<CalendarClock size={18} />} sub="Active" />
+        <StatCard label="Automation Score" value={`${automationScore}%`} icon={<Sparkles size={18} />} tone="accent" sub="Premium" />
       </div>
 
-      {loading && !data ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size={48} /></div>
-      ) : data?.meetings.length > 0 ? (
+      <Card>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: 1, minWidth: '240px', maxWidth: '420px' }}>
+            <SearchField
+              placeholder="Search meetings, participants, or notes..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <AvatarStack items={participants} />
+            <Button variant="secondary" leading={<Filter size={16} />} onClick={refresh}>
+              Filter
+            </Button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px' }}>
+          {statusOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setStatus(option.value)}
+              style={{
+                border: 'none',
+                padding: '10px 14px',
+                borderRadius: '999px',
+                background: status === option.value ? C.accentTint : C.surfaceSoft,
+                color: status === option.value ? C.accent : C.textMuted,
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {loading && meetings.length === 0 ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}>
+          <Spinner size={40} />
+        </div>
+      ) : pagedMeetings.length > 0 ? (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {data.meetings.map(m => (
-              <MeetingCard key={m._id} meeting={m} onRefresh={refresh} />
+          <div className="page-grid">
+            {pagedMeetings.map((meeting) => (
+              <MeetingCard key={meeting._id} meeting={meeting} onRefresh={refresh} />
             ))}
           </div>
-          
-          {data.totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginTop: '40px' }}>
-              <Button 
-                variant="secondary" 
-                disabled={page === 1} 
-                onClick={() => setPage(page - 1)}
-              >
-                ← Previous
-              </Button>
-              <span style={{ fontSize: '14px', color: C.textMuted }}>Page {page} of {data.totalPages}</span>
-              <Button 
-                variant="secondary" 
-                disabled={page === data.totalPages} 
-                onClick={() => setPage(page + 1)}
-              >
-                Next →
-              </Button>
+
+          <Card padding="18px 20px">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '14px', color: C.textMuted }}>
+                Showing {filteredMeetings.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to{' '}
+                {Math.min(page * PAGE_SIZE, filteredMeetings.length)} of {filteredMeetings.length} results
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Button variant="ghost" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                  Previous
+                </Button>
+                {Array.from({ length: totalPages }).slice(0, 5).map((_, index) => {
+                  const pageNumber = index + 1;
+                  const active = pageNumber === page;
+                  return (
+                    <button
+                      key={pageNumber}
+                      type="button"
+                      onClick={() => setPage(pageNumber)}
+                      style={{
+                        width: '38px',
+                        height: '38px',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: active ? C.accent : C.surfaceSoft,
+                        color: active ? C.white : C.textMuted,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                <Button variant="ghost" disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+                  Next
+                </Button>
+              </div>
             </div>
-          )}
+          </Card>
         </>
       ) : (
-        <EmptyState 
-          icon="📭" 
-          title="No meetings found" 
-          sub={status ? `No meetings with status "${status}" were found.` : "You haven't scheduled any meetings yet."} 
+        <EmptyState
+          icon={<Video size={28} />}
+          title="No meetings found"
+          sub={
+            status
+              ? `No meetings with the selected status match your current filters.`
+              : `Create your first meeting to start building the queue.`
+          }
+          actions={
+            <Button onClick={() => navigate('/compose')} leading={<Plus size={16} />}>
+              Create meeting
+            </Button>
+          }
         />
       )}
     </div>
