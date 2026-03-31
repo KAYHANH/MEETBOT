@@ -4,12 +4,17 @@ export const useApi = (apiFunc, immediate = false) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(immediate);
   const [error, setError] = useState(null);
+  const apiFuncRef = useRef(apiFunc);
+
+  useEffect(() => {
+    apiFuncRef.current = apiFunc;
+  }, [apiFunc]);
 
   const execute = useCallback(async (...args) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await apiFunc(...args);
+      const result = await apiFuncRef.current(...args);
       setData(result);
       return result;
     } catch (err) {
@@ -18,7 +23,7 @@ export const useApi = (apiFunc, immediate = false) => {
     } finally {
       setLoading(false);
     }
-  }, [apiFunc]);
+  }, []);
 
   useEffect(() => {
     if (immediate) {
@@ -34,10 +39,15 @@ export const usePolling = (apiFunc, interval = 10000) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const timerRef = useRef(null);
+  const apiFuncRef = useRef(apiFunc);
+
+  useEffect(() => {
+    apiFuncRef.current = apiFunc;
+  }, [apiFunc]);
 
   const fetchData = useCallback(async () => {
     try {
-      const result = await apiFunc();
+      const result = await apiFuncRef.current();
       setData(result);
       setError(null);
     } catch (err) {
@@ -45,7 +55,7 @@ export const usePolling = (apiFunc, interval = 10000) => {
     } finally {
       setLoading(false);
     }
-  }, [apiFunc]);
+  }, []);
 
   useEffect(() => {
     fetchData();

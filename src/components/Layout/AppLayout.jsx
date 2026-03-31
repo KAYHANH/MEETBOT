@@ -88,7 +88,7 @@ const actionButtonStyle = {
 };
 
 export const AppLayout = () => {
-  const { user, loading, logout, isDemoMode } = useAuth();
+  const { user, loading, logout, isDemoMode, loginDemo, canUseDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -156,6 +156,29 @@ export const AppLayout = () => {
         </Button>
 
         <div style={{ marginTop: 'auto', display: 'grid', gap: '10px' }}>
+          {canUseDemo && !isDemoMode && (
+            <button
+              type="button"
+              onClick={loginDemo}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '16px',
+                border: 'none',
+                background: C.accentTint,
+                color: C.accent,
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <Sparkles size={18} />
+              View Demo
+            </button>
+          )}
+
           <button
             type="button"
             style={{

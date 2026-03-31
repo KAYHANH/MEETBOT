@@ -2,12 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { api } from '../services/api';
 
 const AuthContext = createContext(null);
-const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(api.token);
   const [loading, setLoading] = useState(true);
+  const isDemoMode = api.isDemoSessionToken(token);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginDemo, logout, handleCallback, isDemoMode }}>
+    <AuthContext.Provider value={{ user, loading, login, loginDemo, logout, handleCallback, isDemoMode, canUseDemo: api.canUseDemo }}>
       {children}
     </AuthContext.Provider>
   );

@@ -42,7 +42,7 @@ const featureCards = [
 const trustedBy = ['VELO', 'CYPHER', 'NEXUS', 'AETHER', 'ORBIT'];
 
 export const LoginPage = () => {
-  const { login, loginDemo, user, isDemoMode } = useAuth();
+  const { login, loginDemo, user, isDemoMode, canUseDemo } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -194,7 +194,7 @@ export const LoginPage = () => {
               Continue with Google
             </Button>
 
-            {isDemoMode && (
+            {canUseDemo && (
               <Button
                 variant="secondary"
                 size="lg"
@@ -205,6 +205,14 @@ export const LoginPage = () => {
               </Button>
             )}
           </div>
+
+          {canUseDemo && (
+            <div style={{ marginTop: '14px', fontSize: '14px', lineHeight: '1.7', color: C.textDim }}>
+              {isDemoMode
+                ? 'You are currently browsing the local sample workspace.'
+                : 'View Demo opens the same interface with local sample meetings, so you can explore without touching your live Google-connected data.'}
+            </div>
+          )}
 
           <div className="hero-card-grid">
             {featureCards.map((feature, index) => (

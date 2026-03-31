@@ -20,7 +20,6 @@ import {
   Eyebrow,
   Input,
   Select,
-  Spinner,
   Textarea,
   Toggle,
 } from '../ui';
@@ -137,14 +136,6 @@ export const MeetingComposer = () => {
     [formData.scheduledDate, formData.scheduledTime],
   );
 
-  if (loadingSettings && !settings) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}>
-        <Spinner size={40} />
-      </div>
-    );
-  }
-
   if (success) {
     return (
       <div className="page-grid">
@@ -252,6 +243,13 @@ export const MeetingComposer = () => {
           Configure your session details, invite participants, and set your automated
           workflow in one polished flow.
         </p>
+        <div style={{ marginTop: '14px', fontSize: '13px', color: C.textDim }}>
+          {loadingSettings
+            ? 'Syncing your saved workspace defaults...'
+            : settings
+              ? `Defaults loaded for ${formData.timezone}.`
+              : 'Using local defaults until workspace settings load.'}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>

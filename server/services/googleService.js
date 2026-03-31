@@ -2,6 +2,9 @@ import { google } from 'googleapis';
 import { logger } from '../utils/logger.js';
 import * as tokenStore from '../utils/tokenStore.js';
 
+const isPlaceholder = (value = '') =>
+  /your_google_client|replace_with|example/i.test(value);
+
 const getGoogleOAuthConfig = () => {
   const required = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI'];
   const missing = required.filter((key) => !process.env[key]);
@@ -9,6 +12,15 @@ const getGoogleOAuthConfig = () => {
   if (missing.length > 0) {
     const error = new Error(`Missing Google OAuth configuration: ${missing.join(', ')}`);
     error.status = 500;
+    throw error;
+  }
+
+  const invalid = required.filter((key) => isPlaceholder(process.env[key]));
+  if (invalid.length > 0) {
+    const error = new Error(
+      'Google sign-in is disabled in this demo build. Use View Demo or add real Google OAuth values to .env.',
+    );
+    error.status = 503;
     throw error;
   }
 

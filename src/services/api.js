@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 const DEMO_TOKEN = 'demo-mode';
 const DEMO_STORAGE_KEY = 'meetbot_demo_data_v2';
 
@@ -258,7 +257,7 @@ const ensureDemoAuth = (token) => {
 class ApiClient {
   constructor() {
     this.baseUrl = import.meta.env.VITE_API_URL || '/api';
-    this.isDemoMode = isDemoMode;
+    this.canUseDemo = true;
     this.token = localStorage.getItem('meetbot_token');
 
     this.client = axios.create({
@@ -290,6 +289,10 @@ class ApiClient {
     );
   }
 
+  isDemoSessionToken(token = this.token) {
+    return token === DEMO_TOKEN;
+  }
+
   setToken(token) {
     this.token = token;
     localStorage.setItem('meetbot_token', token);
@@ -317,7 +320,7 @@ class ApiClient {
   }
 
   async getMe() {
-    if (this.isDemoMode) {
+    if (this.isDemoSessionToken()) {
       ensureDemoAuth(this.token);
       return delay(DEMO_USER);
     }
@@ -327,15 +330,12 @@ class ApiClient {
   }
 
   async loginDemo() {
-    if (!this.isDemoMode) {
-      throw new Error('Demo mode is not enabled');
-    }
     this.setToken(DEMO_TOKEN);
     return delay({ user: DEMO_USER, token: DEMO_TOKEN });
   }
 
   async logout() {
-    if (this.isDemoMode) {
+    if (this.isDemoSessionToken()) {
       this.clearToken();
       return delay({ message: 'Logged out successfully' });
     }
@@ -344,7 +344,7 @@ class ApiClient {
   }
 
   async createMeeting(data) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request('/meetings', { method: 'POST', body: data });
     }
 
@@ -399,7 +399,7 @@ class ApiClient {
   }
 
   async getMeetings(params = {}) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request('/meetings', { params });
     }
 
@@ -423,7 +423,7 @@ class ApiClient {
   }
 
   async getMeeting(id) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request(`/meetings/${id}`);
     }
 
@@ -436,7 +436,7 @@ class ApiClient {
   }
 
   async getMeetingStats() {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request('/meetings/stats/summary');
     }
 
@@ -454,7 +454,7 @@ class ApiClient {
   }
 
   async cancelMeeting(id, reason) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request(`/meetings/${id}`, { method: 'DELETE', body: { reason } });
     }
 
@@ -483,7 +483,7 @@ class ApiClient {
   }
 
   async resendInvite(id) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request(`/meetings/${id}/resend`, { method: 'POST' });
     }
 
@@ -507,7 +507,7 @@ class ApiClient {
   }
 
   async getSettings() {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request('/settings');
     }
 
@@ -516,7 +516,7 @@ class ApiClient {
   }
 
   async updateSettings(data) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request('/settings', { method: 'PUT', body: data });
     }
 
@@ -539,7 +539,7 @@ class ApiClient {
   }
 
   async getLogs(params = {}) {
-    if (!this.isDemoMode) {
+    if (!this.isDemoSessionToken()) {
       return this.request('/logs', { params });
     }
 

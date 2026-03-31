@@ -8,13 +8,13 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useApi } from '../../hooks/useApi';
+import { useAuth } from '../../context/AuthContext';
 import {
   Button,
   C,
   Card,
   Input,
   Select,
-  Spinner,
 } from '../ui';
 
 const presetDurations = [30, 60, 90];
@@ -33,6 +33,7 @@ const buildReminderPreview = (minutes) => {
 };
 
 export const SettingsPage = () => {
+  const { isDemoMode } = useAuth();
   const { data: settings, loading: loadingSettings } = useApi(api.getSettings.bind(api), true);
   const { execute: updateSettings, loading: saving } = useApi(api.updateSettings.bind(api));
 
@@ -87,14 +88,6 @@ export const SettingsPage = () => {
     if (baseline) setFormData(baseline);
   };
 
-  if (loadingSettings && !settings) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}>
-        <Spinner size={40} />
-      </div>
-    );
-  }
-
   return (
     <div className="page-grid">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' }}>
@@ -103,6 +96,11 @@ export const SettingsPage = () => {
           <p style={{ marginTop: '10px', maxWidth: '680px', fontSize: '16px', lineHeight: '1.7' }}>
             Configure your meeting automation defaults and global workspace behavior.
           </p>
+          <div style={{ marginTop: '14px', fontSize: '13px', color: C.textDim }}>
+            {loadingSettings
+              ? 'Syncing your saved workspace defaults...'
+              : 'Workspace defaults are ready to edit.'}
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -122,7 +120,7 @@ export const SettingsPage = () => {
           justifyContent: 'space-between',
           gap: '18px',
           flexWrap: 'wrap',
-          background: C.accentTint,
+          background: isDemoMode ? C.accentTint : C.successTint,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -141,13 +139,30 @@ export const SettingsPage = () => {
             <ShieldCheck size={18} />
           </div>
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 800 }}>Free mode active</div>
+            <div style={{ fontSize: '20px', fontWeight: 800 }}>
+              {isDemoMode ? 'Demo workspace active' : 'Live workspace connected'}
+            </div>
             <div style={{ marginTop: '4px', fontSize: '14px', color: C.textMuted }}>
-              You are currently using the demo-safe version. Upgrade real credentials to unlock live Google and database workflows.
+              {isDemoMode
+                ? 'This session is using local sample data, so you can explore safely without changing real meetings or credentials.'
+                : 'Google sign-in and MongoDB are connected for this workspace, so your real meeting defaults save immediately.'}
             </div>
           </div>
         </div>
-        <Button variant="dark">Upgrade now</Button>
+        <div
+          style={{
+            padding: '10px 14px',
+            borderRadius: '999px',
+            background: C.surface,
+            color: isDemoMode ? C.accent : C.success,
+            fontSize: '12px',
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {isDemoMode ? 'Sample data' : 'Live data'}
+        </div>
       </Card>
 
       <div className="settings-grid">
