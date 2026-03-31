@@ -16,10 +16,12 @@ import logRoutes from './server/routes/logs.js';
 import { errorHandler } from './server/middleware/errorHandler.js';
 import { apiLimiter } from './server/middleware/rateLimiter.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const projectRoot = __dirname;
+
+dotenv.config({ path: path.join(projectRoot, '.env') });
+
 const isDemoMode = process.env.DEMO_MODE === 'true';
 
 async function startServer() {
@@ -50,9 +52,15 @@ async function startServer() {
 
   // API Routes
   app.use('/api/auth', authRoutes);
-  app.use('/api/meetings', apiLimiter, meetingRoutes);
-  app.use('/api/settings', apiLimiter, settingsRoutes);
-  app.use('/api/logs', apiLimiter, logRoutes);
+  if (isDemoMode) {
+    app.use('/api/meetings', meetingRoutes);
+    app.use('/api/settings', settingsRoutes);
+    app.use('/api/logs', logRoutes);
+  } else {
+    app.use('/api/meetings', apiLimiter, meetingRoutes);
+    app.use('/api/settings', apiLimiter, settingsRoutes);
+    app.use('/api/logs', apiLimiter, logRoutes);
+  }
 
   // Health Check
   app.get('/health', (req, res) => {
@@ -66,12 +74,14 @@ async function startServer() {
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
+      root: projectRoot,
+      envDir: projectRoot,
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.join(projectRoot, 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
