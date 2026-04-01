@@ -31,6 +31,12 @@ const formatDuration = (minutes) => {
   return `${hours}h${rest ? ` ${rest}m` : ''}`;
 };
 
+const formatTime = (dateStr) =>
+  new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(dateStr));
+
 const reminderLabel = (reminder) => {
   if (reminder.type === 'email_now' || reminder.minutesBefore === 0) return 'Starting now alert';
   if (reminder.minutesBefore >= 60) return `${reminder.minutesBefore / 60}h reminder`;
@@ -44,12 +50,26 @@ const getParticipants = (meeting) => {
   return [meeting.recipientName, 'Ops Team', 'Host'];
 };
 
+const getAttendanceParticipants = (meeting) =>
+  Array.isArray(meeting.attendanceParticipants) ? meeting.attendanceParticipants : [];
+
 export const MeetingCard = ({ meeting, onRefresh }) => {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const participants = useMemo(() => getParticipants(meeting), [meeting]);
+  const attendanceParticipants = useMemo(() => getAttendanceParticipants(meeting), [meeting]);
+  const participants = useMemo(() => {
+    if (attendanceParticipants.length > 0) {
+      return attendanceParticipants.map((participant) => participant.participantName);
+    }
+    return getParticipants(meeting);
+  }, [attendanceParticipants, meeting]);
   const sentReminders = meeting.reminders.filter((reminder) => reminder.sent).length;
+  const attendanceCount = attendanceParticipants.length;
+  const attendanceDuration = attendanceParticipants.reduce(
+    (total, participant) => total + (participant.totalDurationMinutes || 0),
+    0,
+  );
 
   const handleCancel = async () => {
     const reason = window.prompt('Reason for cancellation (optional):');
@@ -245,6 +265,108 @@ export const MeetingCard = ({ meeting, onRefresh }) => {
                   </Button>
                 </div>
               )}
+
+              <div
+                style={{
+                  marginTop: '16px',
+                  padding: '18px',
+                  borderRadius: '20px',
+                  background: C.surface,
+                  boxShadow: `inset 0 0 0 1px ${C.ghostBorder}`,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.12em', color: C.textDim, textTransform: 'uppercase' }}>
+                      Meet attendance
+                    </div>
+                    <div style={{ marginTop: '8px', fontSize: '16px', fontWeight: 800 }}>
+                      {attendanceCount > 0 ? `${attendanceCount} joined` : 'Waiting for first join'}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', fontSize: '13px', color: C.textMuted }}>
+                    <div>
+                      {meeting.actualStartedAt ? `Started ${formatTime(meeting.actualStartedAt)}` : 'Starts when the first person joins'}
+                    </div>
+                    <div>
+                      {meeting.actualEndedAt
+                        ? `Ended ${formatTime(meeting.actualEndedAt)}`
+                        : meeting.attendanceLastSyncedAt
+                          ? `Synced ${formatTime(meeting.attendanceLastSyncedAt)}`
+                          : 'Not synced yet'}
+                    </div>
+                  </div>
+                </div>
+
+                {attendanceCount > 0 ? (
+                  <>
+                    <div style={{ marginTop: '16px', fontSize: '13px', color: C.textDim }}>
+                      Total attendee time tracked: {formatDuration(attendanceDuration)}
+                    </div>
+
+                    <div style={{ display: 'grid', gap: '12px', marginTop: '16px' }}>
+                      {attendanceParticipants.map((participant) => (
+                        <div
+                          key={participant.participantResourceName}
+                          style={{
+                            padding: '14px 16px',
+                            borderRadius: '18px',
+                            background: C.surfaceSoft,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                            <div>
+                              <div style={{ fontSize: '15px', fontWeight: 800 }}>{participant.participantName}</div>
+                              <div style={{ marginTop: '4px', fontSize: '12px', color: C.textDim, textTransform: 'capitalize' }}>
+                                {participant.participantType.replace('_', ' ')}
+                              </div>
+                            </div>
+
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '14px', fontWeight: 800, color: C.text }}>
+                                {formatDuration(participant.totalDurationMinutes)}
+                              </div>
+                              <div style={{ marginTop: '4px', fontSize: '12px', color: C.textDim }}>
+                                {participant.earliestStartTime ? formatTime(participant.earliestStartTime) : '--'} -{' '}
+                                {participant.latestEndTime ? formatTime(participant.latestEndTime) : 'Live'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'grid', gap: '8px', marginTop: '12px' }}>
+                            {participant.sessions.map((session) => (
+                              <div
+                                key={session.sessionName}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: '12px',
+                                  padding: '10px 12px',
+                                  borderRadius: '14px',
+                                  background: C.surface,
+                                }}
+                              >
+                                <div style={{ fontSize: '13px', color: C.textMuted }}>
+                                  {formatTime(session.startTime)} - {session.endTime ? formatTime(session.endTime) : 'Live'}
+                                </div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: C.text }}>
+                                  {formatDuration(session.durationMinutes)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ marginTop: '16px', fontSize: '14px', lineHeight: '1.7', color: C.textMuted }}>
+                    Join events appear automatically after participants enter the Google Meet link that MeetBot sent in the invitation email.
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

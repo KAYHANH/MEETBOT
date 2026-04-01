@@ -15,6 +15,15 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { Button, C, SearchField } from '../ui';
 
+const SUPPORT_URL = 'https://github.com/KAYHANH/MEETBOT#readme';
+const searchRouteMap = {
+  '/dashboard': '/meetings',
+  '/meetings': '/meetings',
+  '/compose': '/meetings',
+  '/logs': '/logs',
+  '/settings': '/settings',
+};
+
 const navigationItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/meetings', label: 'Meetings', icon: Video },
@@ -91,6 +100,7 @@ export const AppLayout = () => {
   const { user, loading, logout, isDemoMode, loginDemo, canUseDemo } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [topbarSearch, setTopbarSearch] = React.useState('');
 
   React.useEffect(() => {
     if (!loading && !user && location.pathname !== '/auth') {
@@ -98,10 +108,46 @@ export const AppLayout = () => {
     }
   }, [user, loading, location.pathname, navigate]);
 
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setTopbarSearch(params.get('q') ?? '');
+  }, [location.pathname, location.search]);
+
   if (loading) return null;
   if (!user && location.pathname !== '/auth') return null;
 
   const copy = routeCopy[location.pathname] || routeCopy['/dashboard'];
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+
+    const targetPath = searchRouteMap[location.pathname] || '/meetings';
+    const params = new URLSearchParams();
+    const nextQuery = topbarSearch.trim();
+    if (nextQuery) {
+      params.set('q', nextQuery);
+    }
+    if (targetPath === '/settings') {
+      const activeSection = new URLSearchParams(location.search).get('section');
+      if (activeSection) {
+        params.set('section', activeSection);
+      }
+    }
+
+    navigate({
+      pathname: targetPath,
+      search: params.toString() ? `?${params.toString()}` : '',
+    });
+  };
+
+  const handleDemoSwitch = async () => {
+    await loginDemo();
+    window.location.assign('/dashboard');
+  };
+
+  const handleSupportOpen = () => {
+    window.open(SUPPORT_URL, '_blank', 'noopener,noreferrer');
+  };
 
   return (
     <div className="app-shell">
@@ -159,7 +205,7 @@ export const AppLayout = () => {
           {canUseDemo && !isDemoMode && (
             <button
               type="button"
-              onClick={loginDemo}
+              onClick={handleDemoSwitch}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -181,6 +227,7 @@ export const AppLayout = () => {
 
           <button
             type="button"
+            onClick={handleSupportOpen}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -231,6 +278,7 @@ export const AppLayout = () => {
             <div style={{ display: 'grid', gap: '8px', marginTop: '14px' }}>
               <button
                 type="button"
+                onClick={() => navigate('/settings?section=workspace')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -274,15 +322,25 @@ export const AppLayout = () => {
 
       <div className="app-workspace">
         <header className="app-topbar">
-          <div style={{ flex: 1, maxWidth: '360px' }}>
-            <SearchField placeholder={copy.search} />
-          </div>
+          <form onSubmit={handleSearchSubmit} style={{ flex: 1, maxWidth: '360px' }}>
+            <SearchField
+              aria-label="Search workspace"
+              placeholder={copy.search}
+              value={topbarSearch}
+              onChange={(event) => setTopbarSearch(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setTopbarSearch('');
+                }
+              }}
+            />
+          </form>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button type="button" style={actionButtonStyle}>
+            <button type="button" onClick={() => navigate('/logs')} style={actionButtonStyle} aria-label="Open activity logs">
               <Bell size={18} />
             </button>
-            <button type="button" style={actionButtonStyle}>
+            <button type="button" onClick={() => navigate('/settings')} style={actionButtonStyle} aria-label="Open settings">
               <Settings size={18} />
             </button>
 

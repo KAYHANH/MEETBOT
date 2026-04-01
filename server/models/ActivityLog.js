@@ -6,7 +6,15 @@ const activityLogSchema = new mongoose.Schema({
   type: { 
     type: String, 
     required: true,
-    enum: ['email_sent', 'calendar_created', 'reminder_sent', 'meeting_cancelled', 'error']
+    enum: [
+      'email_sent',
+      'calendar_created',
+      'reminder_sent',
+      'meeting_cancelled',
+      'participant_joined',
+      'participant_left',
+      'error',
+    ]
   },
   message: { type: String, required: true },
   error: { type: String },

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const DEMO_TOKEN = 'demo-mode';
-const DEMO_STORAGE_KEY = 'meetbot_demo_data_v2';
+const DEMO_STORAGE_KEY = 'meetbot_demo_data_v3';
 
 const DEMO_USER = {
   userId: 'demo-user',
@@ -17,6 +17,33 @@ const createReminder = (minutesBefore, sent = false, sentAt = null) => ({
   minutesBefore,
   sent,
   sentAt
+});
+
+const createAttendanceSession = (sessionName, startOffset, endOffset) => ({
+  sessionName,
+  startTime: minutesFromNow(startOffset),
+  endTime: endOffset == null ? null : minutesFromNow(endOffset),
+  durationMinutes:
+    endOffset == null
+      ? Math.max(1, Math.round(Math.abs(startOffset)))
+      : Math.max(1, Math.round(endOffset - startOffset)),
+});
+
+const createAttendanceParticipant = ({
+  participantName,
+  participantType = 'signed_in',
+  participantUser = null,
+  participantResourceName,
+  sessions,
+}) => ({
+  participantName,
+  participantType,
+  participantUser,
+  participantResourceName,
+  earliestStartTime: sessions[0]?.startTime || null,
+  latestEndTime: sessions.at(-1)?.endTime || null,
+  totalDurationMinutes: sessions.reduce((total, session) => total + (session.durationMinutes || 0), 0),
+  sessions,
 });
 
 const createInitialDemoData = () => ({
@@ -157,7 +184,8 @@ const createInitialDemoData = () => ({
   settings: {
     emailReminderMinutes: [1440, 60],
     defaultTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    defaultMeetingDuration: 60
+    defaultMeetingDuration: 60,
+    automationMode: 'smart',
   },
   logs: [
     {

@@ -17,6 +17,7 @@ export const settingsSchema = z.object({
   emailReminderMinutes: z.array(z.number().int().min(0).max(10080)).max(10).optional(),
   defaultTimezone: z.string().max(100).optional(),
   defaultMeetingDuration: z.number().int().min(15).max(480).optional(),
+  automationMode: z.enum(['smart', 'universal']).optional(),
 });
 
 export const validate = (schema) => (req, res, next) => {

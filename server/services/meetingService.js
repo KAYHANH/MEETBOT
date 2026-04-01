@@ -5,6 +5,120 @@ import * as googleService from './googleService.js';
 import * as emailTemplates from '../utils/emailTemplates.js';
 import { logger } from '../utils/logger.js';
 
+const ATTENDANCE_LOOKBACK_MS = 12 * 60 * 60 * 1000;
+const ATTENDANCE_LOOKAHEAD_MS = 18 * 60 * 60 * 1000;
+
+const extractMeetingCode = (meetLink = '') => {
+  if (!meetLink) return null;
+
+  try {
+    const { pathname } = new URL(meetLink);
+    const candidate = pathname.split('/').filter(Boolean).pop();
+    return /^[a-z]{3}-[a-z]{4}-[a-z]{3}$/i.test(candidate || '') ? candidate : null;
+  } catch {
+    return null;
+  }
+};
+
+const getParticipantIdentity = (participant) => {
+  if (participant.signedinUser) {
+    return {
+      participantName: participant.signedinUser.displayName || 'Signed-in participant',
+      participantType: 'signed_in',
+      participantUser: participant.signedinUser.user || null,
+    };
+  }
+
+  if (participant.anonymousUser) {
+    return {
+      participantName: participant.anonymousUser.displayName || 'Anonymous participant',
+      participantType: 'anonymous',
+      participantUser: null,
+    };
+  }
+
+  return {
+    participantName: participant.phoneUser?.displayName || 'Phone participant',
+    participantType: 'phone',
+    participantUser: null,
+  };
+};
+
+const getDurationMinutes = (startTime, endTime = null) => {
+  if (!startTime) return 0;
+  const start = new Date(startTime).getTime();
+  const end = endTime ? new Date(endTime).getTime() : Date.now();
+
+  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+  return Math.max(0, Math.round((end - start) / 60000));
+};
+
+const buildAttendanceParticipants = async (userId, participants) => {
+  const attendance = [];
+
+  for (const participant of participants) {
+    const participantSessions = await googleService.listParticipantSessions(userId, participant.name);
+    const sessions = participantSessions
+      .map((session) => ({
+        sessionName: session.name,
+        startTime: session.startTime ? new Date(session.startTime) : null,
+        endTime: session.endTime ? new Date(session.endTime) : null,
+        durationMinutes: getDurationMinutes(session.startTime, session.endTime),
+      }))
+      .filter((session) => session.startTime)
+      .sort((left, right) => left.startTime - right.startTime);
+
+    const identity = getParticipantIdentity(participant);
+
+    attendance.push({
+      ...identity,
+      participantResourceName: participant.name,
+      earliestStartTime: participant.earliestStartTime ? new Date(participant.earliestStartTime) : sessions[0]?.startTime || null,
+      latestEndTime: participant.latestEndTime ? new Date(participant.latestEndTime) : sessions.at(-1)?.endTime || null,
+      totalDurationMinutes: sessions.reduce((total, session) => total + session.durationMinutes, 0),
+      sessions,
+    });
+  }
+
+  return attendance.sort((left, right) => {
+    const leftTime = left.earliestStartTime ? new Date(left.earliestStartTime).getTime() : Number.MAX_SAFE_INTEGER;
+    const rightTime = right.earliestStartTime ? new Date(right.earliestStartTime).getTime() : Number.MAX_SAFE_INTEGER;
+    return leftTime - rightTime;
+  });
+};
+
+const selectConferenceRecord = (meeting, conferenceRecords) => {
+  if (!conferenceRecords.length) return null;
+
+  if (meeting.conferenceRecordName) {
+    const existing = conferenceRecords.find((record) => record.name === meeting.conferenceRecordName);
+    if (existing) return existing;
+  }
+
+  const scheduledTime = new Date(meeting.scheduledAt).getTime();
+
+  return [...conferenceRecords].sort((left, right) => {
+    const leftActive = !left.endTime ? -1 : 0;
+    const rightActive = !right.endTime ? -1 : 0;
+    if (leftActive !== rightActive) return leftActive - rightActive;
+
+    const leftDiff = Math.abs(new Date(left.startTime).getTime() - scheduledTime);
+    const rightDiff = Math.abs(new Date(right.startTime).getTime() - scheduledTime);
+    return leftDiff - rightDiff;
+  })[0];
+};
+
+const flattenAttendanceSessions = (attendanceParticipants = []) =>
+  attendanceParticipants.flatMap((participant) =>
+    (participant.sessions || []).map((session) => ({
+      sessionName: session.sessionName,
+      participantName: participant.participantName,
+      startTime: session.startTime ? new Date(session.startTime).toISOString() : null,
+      endTime: session.endTime ? new Date(session.endTime).toISOString() : null,
+      durationMinutes: session.durationMinutes || 0,
+    })),
+  );
+
 export const scheduleMeeting = async (data) => {
   const { userId, userEmail, recipientName, recipientEmail, subject, message, scheduledAt, timezone, durationMinutes } = data;
 
@@ -49,6 +163,7 @@ export const scheduleMeeting = async (data) => {
 
     meeting.googleCalendarEventId = calendarResult.eventId;
     meeting.googleMeetLink = calendarResult.meetLink;
+    meeting.googleMeetCode = extractMeetingCode(calendarResult.meetLink);
     
     await ActivityLog.create({
       userId,
@@ -107,6 +222,103 @@ export const scheduleMeeting = async (data) => {
 
   await meeting.save();
   return meeting;
+};
+
+export const syncMeetingAttendance = async (meetingId, userId) => {
+  const meeting = await Meeting.findOne({ _id: meetingId, userId });
+  if (!meeting || !meeting.googleMeetLink) return null;
+
+  const meetingCode = meeting.googleMeetCode || extractMeetingCode(meeting.googleMeetLink);
+  if (!meetingCode) return meeting;
+
+  try {
+    const filterStart = new Date(new Date(meeting.scheduledAt).getTime() - ATTENDANCE_LOOKBACK_MS);
+    const filterEnd = new Date(
+      new Date(meeting.scheduledAt).getTime() + meeting.durationMinutes * 60000 + ATTENDANCE_LOOKAHEAD_MS,
+    );
+
+    const conferenceRecords = await googleService.listConferenceRecords({
+      userId,
+      meetingCode,
+      startTime: filterStart,
+      endTime: filterEnd,
+    });
+
+    const conferenceRecord = selectConferenceRecord(meeting, conferenceRecords);
+    if (!conferenceRecord) return meeting;
+
+    const participants = await googleService.listConferenceParticipants(userId, conferenceRecord.name);
+    const attendanceParticipants = await buildAttendanceParticipants(userId, participants);
+
+    const previousSessions = new Map(
+      flattenAttendanceSessions(meeting.attendanceParticipants).map((session) => [session.sessionName, session]),
+    );
+    const nextSessions = new Map(
+      flattenAttendanceSessions(attendanceParticipants).map((session) => [session.sessionName, session]),
+    );
+
+    meeting.googleMeetCode = meetingCode;
+    meeting.conferenceRecordName = conferenceRecord.name;
+    meeting.actualStartedAt = conferenceRecord.startTime ? new Date(conferenceRecord.startTime) : meeting.actualStartedAt;
+    meeting.actualEndedAt = conferenceRecord.endTime ? new Date(conferenceRecord.endTime) : meeting.actualEndedAt;
+    meeting.attendanceLastSyncedAt = new Date();
+    meeting.attendanceParticipants = attendanceParticipants;
+
+    if (conferenceRecord.endTime && !['cancelled', 'failed'].includes(meeting.status)) {
+      meeting.status = 'completed';
+    }
+
+    const newJoinLogs = [];
+    const leaveLogs = [];
+
+    for (const [sessionName, session] of nextSessions.entries()) {
+      if (!previousSessions.has(sessionName)) {
+        newJoinLogs.push({
+          userId,
+          meetingId: meeting._id,
+          type: 'participant_joined',
+          message: `${session.participantName} joined "${meeting.subject}"`,
+          createdAt: session.startTime || new Date(),
+        });
+      }
+    }
+
+    for (const [sessionName, previous] of previousSessions.entries()) {
+      const current = nextSessions.get(sessionName);
+      if (current && !previous.endTime && current.endTime) {
+        leaveLogs.push({
+          userId,
+          meetingId: meeting._id,
+          type: 'participant_left',
+          message: `${current.participantName} left "${meeting.subject}" after ${current.durationMinutes} minute${current.durationMinutes === 1 ? '' : 's'}`,
+          createdAt: current.endTime,
+        });
+      }
+    }
+
+    await meeting.save();
+
+    if (newJoinLogs.length > 0) {
+      await ActivityLog.insertMany(newJoinLogs, { ordered: false });
+    }
+
+    if (leaveLogs.length > 0) {
+      await ActivityLog.insertMany(leaveLogs, { ordered: false });
+    }
+
+    return meeting;
+  } catch (error) {
+    const status = error.response?.status || error.code || error.status;
+    const errorMessage = error.response?.data?.error?.message || error.response?.data?.error || error.message;
+
+    if (status === 403 || status === 401) {
+      logger.warn(`Attendance sync skipped for meeting ${meeting._id}: ${errorMessage}`);
+      return meeting;
+    }
+
+    logger.error(`Failed to sync attendance for meeting ${meeting._id}:`, error);
+    return meeting;
+  }
 };
 
 export const sendReminder = async (meeting, reminderIndex) => {

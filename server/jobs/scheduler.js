@@ -29,6 +29,30 @@ const processReminders = async () => {
   }
 };
 
+const syncAttendance = async () => {
+  if (!isDatabaseReady()) {
+    return;
+  }
+
+  const now = new Date();
+  const lookback = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const lookahead = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+
+  try {
+    const meetings = await Meeting.find({
+      googleMeetLink: { $exists: true, $ne: null },
+      scheduledAt: { $gte: lookback, $lte: lookahead },
+      status: { $nin: ['cancelled', 'failed'] },
+    }).limit(10);
+
+    for (const meeting of meetings) {
+      await meetingService.syncMeetingAttendance(meeting._id, meeting.userId);
+    }
+  } catch (error) {
+    logger.error('Error in syncAttendance job:', error);
+  }
+};
+
 const markCompleted = async () => {
   if (!isDatabaseReady()) {
     return;
@@ -55,6 +79,7 @@ const markCompleted = async () => {
 export const initScheduler = () => {
   // Every minute
   cron.schedule('* * * * *', processReminders);
+  cron.schedule('* * * * *', syncAttendance);
   
   // Every 5 minutes
   cron.schedule('*/5 * * * *', markCompleted);

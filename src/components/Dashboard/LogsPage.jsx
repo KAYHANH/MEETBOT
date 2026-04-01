@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Download, Eye, ShieldCheck, Sparkles, Timer } from 'lucide-react';
 import { api } from '../../services/api';
 import { usePolling } from '../../hooks/useApi';
@@ -15,10 +16,12 @@ import {
 } from '../ui';
 
 const typeLabels = {
-  email_sent: 'Reminder Sent',
+  email_sent: 'Invitation Sent',
   calendar_created: 'Google Meet Link Created',
   reminder_sent: 'Reminder Sent',
   meeting_cancelled: 'Meeting Cancelled',
+  participant_joined: 'Participant Joined',
+  participant_left: 'Participant Left',
   settings_updated: 'Settings Updated',
 };
 
@@ -45,17 +48,24 @@ const formatTimestamp = (value) =>
   }).format(new Date(value));
 
 export const LogsPage = () => {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [level, setLevel] = useState('');
+  const deferredSearch = useDeferredValue(search);
 
   const { data, loading } = usePolling(() => api.getLogs({ limit: 250 }), 15000);
   const logs = data?.logs || [];
+  const querySearch = searchParams.get('q') ?? '';
+
+  useEffect(() => {
+    setSearch(querySearch);
+  }, [querySearch]);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const status = getStatus(log);
-      const query = search.trim().toLowerCase();
+      const query = deferredSearch.trim().toLowerCase();
       const matchesQuery =
         !query ||
         [log.message, log.type, log.meetingId, log.error]
@@ -64,7 +74,7 @@ export const LogsPage = () => {
 
       return matchesQuery && (!typeFilter || log.type === typeFilter) && (!level || status === level);
     });
-  }, [logs, search, typeFilter, level]);
+  }, [logs, deferredSearch, typeFilter, level]);
 
   const exportCsv = () => {
     const rows = [
@@ -239,6 +249,7 @@ export const LogsPage = () => {
                         <button
                           type="button"
                           title={log.error || log.message}
+                          onClick={() => window.alert(log.error || log.message)}
                           style={{
                             width: '34px',
                             height: '34px',
@@ -249,6 +260,7 @@ export const LogsPage = () => {
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            cursor: 'pointer',
                           }}
                         >
                           <Eye size={16} />
@@ -271,7 +283,7 @@ export const LogsPage = () => {
 
       <div className="triple-grid">
         <StatCard label="Success Rate (24h)" value={`${successRate}%`} icon={<ShieldCheck size={18} />} trend="+0.4%" />
-        <StatCard label="API Latency (Avg)" value="242ms" icon={<Timer size={18} />} trend="↓12ms" />
+        <StatCard label="API Latency (Avg)" value="242ms" icon={<Timer size={18} />} trend="-12ms" />
         <StatCard label="Active Automations" value={Math.max(logs.length * 8, 12)} icon={<Sparkles size={18} />} sub="Target 1.2k" />
       </div>
     </div>

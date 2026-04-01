@@ -15,7 +15,8 @@ router.get('/', async (req, res) => {
     return res.json({
       emailReminderMinutes: [1440, 60],
       defaultTimezone: 'UTC',
-      defaultMeetingDuration: 60
+      defaultMeetingDuration: 60,
+      automationMode: 'smart',
     });
   }
   

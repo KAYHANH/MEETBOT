@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useDeferredValue, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarClock, Filter, Plus, Sparkles, Video } from 'lucide-react';
 import { api } from '../../services/api';
 import { usePolling } from '../../hooks/useApi';
@@ -45,16 +45,37 @@ const filterSearch = (meeting, query) => {
 
 export const MeetingsPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   const { data, loading, refresh } = usePolling(() => api.getMeetings({ limit: 100 }), 30000);
   const meetings = data?.meetings || [];
+  const querySearch = searchParams.get('q') ?? '';
+  const queryStatus = searchParams.get('status') ?? '';
+  const deferredSearch = useDeferredValue(search);
+
+  React.useEffect(() => {
+    setSearch(querySearch);
+  }, [querySearch]);
+
+  React.useEffect(() => {
+    setStatus(queryStatus);
+  }, [queryStatus]);
+
+  React.useEffect(() => {
+    if (querySearch || queryStatus) {
+      setFiltersOpen(true);
+    }
+  }, [querySearch, queryStatus]);
 
   const filteredMeetings = useMemo(() => {
-    return meetings.filter((meeting) => (!status || meeting.status === status) && filterSearch(meeting, search));
-  }, [meetings, status, search]);
+    return meetings.filter(
+      (meeting) => (!status || meeting.status === status) && filterSearch(meeting, deferredSearch),
+    );
+  }, [meetings, status, deferredSearch]);
 
   const totalPages = Math.max(1, Math.ceil(filteredMeetings.length / PAGE_SIZE));
   const pagedMeetings = filteredMeetings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -85,6 +106,7 @@ export const MeetingsPage = () => {
     : 94;
 
   const participants = filteredMeetings.map((meeting) => meeting.recipientName);
+  const hasActiveFilters = Boolean(search.trim() || status);
 
   return (
     <div className="page-grid">
@@ -121,32 +143,48 @@ export const MeetingsPage = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
             <AvatarStack items={participants} />
-            <Button variant="secondary" leading={<Filter size={16} />} onClick={refresh}>
-              Filter
+            <Button
+              variant="secondary"
+              leading={<Filter size={16} />}
+              onClick={() => {
+                if (hasActiveFilters) {
+                  setSearch('');
+                  setStatus('');
+                  return;
+                }
+                setFiltersOpen((current) => !current);
+              }}
+            >
+              {hasActiveFilters ? 'Clear filters' : filtersOpen ? 'Hide filters' : 'Show filters'}
+            </Button>
+            <Button variant="ghost" onClick={refresh}>
+              Refresh queue
             </Button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px' }}>
-          {statusOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setStatus(option.value)}
-              style={{
-                border: 'none',
-                padding: '10px 14px',
-                borderRadius: '999px',
-                background: status === option.value ? C.accentTint : C.surfaceSoft,
-                color: status === option.value ? C.accent : C.textMuted,
-                fontWeight: 800,
-                cursor: 'pointer',
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        {(filtersOpen || hasActiveFilters) && (
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '18px' }}>
+            {statusOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setStatus(option.value)}
+                style={{
+                  border: 'none',
+                  padding: '10px 14px',
+                  borderRadius: '999px',
+                  background: status === option.value ? C.accentTint : C.surfaceSoft,
+                  color: status === option.value ? C.accent : C.textMuted,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
       </Card>
 
       {loading && meetings.length === 0 ? (

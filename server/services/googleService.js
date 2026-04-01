@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import axios from 'axios';
 import { logger } from '../utils/logger.js';
 import * as tokenStore from '../utils/tokenStore.js';
 
@@ -48,6 +49,7 @@ export const getAuthUrl = () => {
     scope: [
       'https://www.googleapis.com/auth/gmail.send',
       'https://www.googleapis.com/auth/calendar.events',
+      'https://www.googleapis.com/auth/meetings.space.readonly',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ]
@@ -178,4 +180,94 @@ export const deleteCalendarEvent = async (userId, eventId) => {
     // Don't throw if already deleted
     if (error.code !== 410 && error.code !== 404) throw error;
   }
+};
+
+const getMeetAccessToken = async (userId) => {
+  const auth = await getAuthenticatedClient(userId);
+  const tokenResult = await auth.getAccessToken();
+  const accessToken = typeof tokenResult === 'string' ? tokenResult : tokenResult?.token;
+
+  if (!accessToken) {
+    const error = new Error('No Google Meet access token available');
+    error.status = 401;
+    throw error;
+  }
+
+  return accessToken;
+};
+
+const meetGet = async (userId, endpoint, params = {}) => {
+  const accessToken = await getMeetAccessToken(userId);
+  const response = await axios.get(`https://meet.googleapis.com/v2${endpoint}`, {
+    params,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return response.data;
+};
+
+const buildFilter = (parts) => parts.filter(Boolean).join(' AND ');
+
+export const listConferenceRecords = async ({ userId, meetingCode, startTime, endTime, activeOnly = false, pageSize = 10 }) => {
+  const filter = buildFilter([
+    meetingCode ? `space.meeting_code = "${meetingCode}"` : null,
+    startTime ? `start_time >= "${new Date(startTime).toISOString()}"` : null,
+    endTime ? `start_time <= "${new Date(endTime).toISOString()}"` : null,
+    activeOnly ? 'end_time IS NULL' : null,
+  ]);
+
+  let nextPageToken;
+  const conferenceRecords = [];
+
+  do {
+    const data = await meetGet(userId, '/conferenceRecords', {
+      filter: filter || undefined,
+      pageSize,
+      pageToken: nextPageToken,
+    });
+
+    conferenceRecords.push(...(data.conferenceRecords || []));
+    nextPageToken = data.nextPageToken;
+  } while (nextPageToken);
+
+  return conferenceRecords;
+};
+
+export const getConferenceRecord = async (userId, conferenceRecordName) =>
+  meetGet(userId, `/${conferenceRecordName}`);
+
+export const listConferenceParticipants = async (userId, conferenceRecordName) => {
+  let nextPageToken;
+  const participants = [];
+
+  do {
+    const data = await meetGet(userId, `/${conferenceRecordName}/participants`, {
+      pageSize: 100,
+      pageToken: nextPageToken,
+    });
+
+    participants.push(...(data.participants || []));
+    nextPageToken = data.nextPageToken;
+  } while (nextPageToken);
+
+  return participants;
+};
+
+export const listParticipantSessions = async (userId, participantResourceName) => {
+  let nextPageToken;
+  const participantSessions = [];
+
+  do {
+    const data = await meetGet(userId, `/${participantResourceName}/participantSessions`, {
+      pageSize: 250,
+      pageToken: nextPageToken,
+    });
+
+    participantSessions.push(...(data.participantSessions || []));
+    nextPageToken = data.nextPageToken;
+  } while (nextPageToken);
+
+  return participantSessions;
 };

@@ -12,7 +12,27 @@ const meetingSchema = new mongoose.Schema({
   durationMinutes: { type: Number, default: 60 },
   googleCalendarEventId: { type: String },
   googleMeetLink: { type: String },
+  googleMeetCode: { type: String, index: true },
+  conferenceRecordName: { type: String },
   emailMessageId: { type: String },
+  actualStartedAt: { type: Date },
+  actualEndedAt: { type: Date },
+  attendanceLastSyncedAt: { type: Date },
+  attendanceParticipants: [{
+    participantName: { type: String, required: true },
+    participantType: { type: String, enum: ['signed_in', 'anonymous', 'phone'], default: 'signed_in' },
+    participantUser: { type: String },
+    participantResourceName: { type: String, required: true },
+    earliestStartTime: { type: Date },
+    latestEndTime: { type: Date },
+    totalDurationMinutes: { type: Number, default: 0 },
+    sessions: [{
+      sessionName: { type: String, required: true },
+      startTime: { type: Date, required: true },
+      endTime: { type: Date },
+      durationMinutes: { type: Number, default: 0 }
+    }]
+  }],
   status: { 
     type: String, 
     enum: ['scheduled', 'email_sent', 'reminders_sent', 'completed', 'failed', 'cancelled'],
